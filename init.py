@@ -20,6 +20,8 @@ auth:
   type: custom
   custom:
     className: pachyderm_authenticator.PachydermAuthenticator
+    config:
+      password: {}
 proxy:
   secretToken: {}
 """
@@ -131,8 +133,9 @@ def main():
         run("kubectl", "patch", "deployment", "tiller-deploy", "--namespace=kube-system", "--type=json", """--patch='[{"op": "add", "path": "/spec/template/spec/containers/0/command", "value": ["/tiller", "--listen=localhost:44134"]}]'""")
 
     # generate the config
+    default_password = secrets.token_hex(32)
     secret_token = secrets.token_hex(32)
-    config = BASE_CONFIG.format(secret_token)
+    config = BASE_CONFIG.format(default_password, secret_token)
 
     if args.tls_host:
         config += TLS_CONFIG.format(args.tls_host, args.tls_email)
@@ -155,6 +158,10 @@ def main():
     finally:
         if not args.debug:
             os.unlink(config_path)
+
+    print("===> wrapping up")
+    print("if you don't enable auth on your pachyderm cluster, JupyterHub will expect the following password for users:")
+    print(default_password)
 
     return 0
 
