@@ -16,6 +16,10 @@ hub:
   image:
     name: ysimonson/jupyterhub-pachyderm-hub
     tag: 0.8.2
+singleuser:
+  image:
+    name: ysimonson/jupyterhub-pachyderm-user
+    tag: 0.8.2
 auth:
   type: custom
   custom:
