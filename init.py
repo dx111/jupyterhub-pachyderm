@@ -139,7 +139,6 @@ def main():
 
     if args.tls_host:
         config += TLS_CONFIG.format(args.tls_host, args.tls_email)
-    # TODO: install the custom authenticator
 
     print("===> generating config")
     with tempfile.NamedTemporaryFile(delete=False) as f:
