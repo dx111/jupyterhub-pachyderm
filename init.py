@@ -25,7 +25,9 @@ auth:
   custom:
     className: pachyderm_authenticator.PachydermAuthenticator
     config:
-      password: {}
+      pach_auth_token: "{}"
+      pach_tls_certs: "{}"
+      global_password: "{}"
 proxy:
   secretToken: {}
 """
@@ -48,8 +50,9 @@ def run(cmd, *args, capture=False):
 def main():
     parser = argparse.ArgumentParser(description="Sets up JupyterHub on a kubernetes cluster that has Pachyderm running on it.")
     parser.add_argument("--debug", default=False, action="store_true", help="Debug mode")
-    parser.add_argument("--tls-host", default="", help="If set, TLS is enabled via Let's Encrypt. The value is a hostname associated with the TLS certificate.")
-    parser.add_argument("--tls-email", default="", help="If set, TLS is enabled via Let's Encrypt. The value is an email address associated with the TLS certificate.")
+    parser.add_argument("--pach-tls-certs-path", default="", help="Path to a root certs file for Pachyderm TLS.")
+    parser.add_argument("--tls-host", default="", help="If set, TLS is enabled on JupyterHub via Let's Encrypt. The value is a hostname associated with the TLS certificate.")
+    parser.add_argument("--tls-email", default="", help="If set, TLS is enabled on JupyterHub via Let's Encrypt. The value is an email address associated with the TLS certificate.")
     parser.add_argument("--install-tiller", default=False, action="store_true", help="Installs tiller if it's not installed already.")
     args = parser.parse_args()
 
@@ -136,10 +139,20 @@ def main():
         run("helm", "init", "--service-account", "tiller", "--wait")
         run("kubectl", "patch", "deployment", "tiller-deploy", "--namespace=kube-system", "--type=json", """--patch='[{"op": "add", "path": "/spec/template/spec/containers/0/command", "value": ["/tiller", "--listen=localhost:44134"]}]'""")
 
+    # generate pach auth token
+    # TODO
+    pach_auth_token = ""
+
+    # get pach tls certs
+    pach_tls_certs = ""
+    if args.pach_tls_certs_path != "":
+        with open(args.pach_tls_certs_path, "r") as f:
+            pach_tls_certs = f.read()
+
     # generate the config
     default_password = secrets.token_hex(32)
     secret_token = secrets.token_hex(32)
-    config = BASE_CONFIG.format(default_password, secret_token)
+    config = BASE_CONFIG.format(pach_auth_token, pach_tls_certs, default_password, secret_token)
 
     if args.tls_host:
         config += TLS_CONFIG.format(args.tls_host, args.tls_email)
@@ -162,6 +175,7 @@ def main():
         if not args.debug:
             os.unlink(config_path)
 
+    # TODO: don't show this message if pach auth is enabled
     print("===> wrapping up")
     print("if you don't enable auth on your pachyderm cluster, JupyterHub will expect the following password for users:")
     print(default_password)
