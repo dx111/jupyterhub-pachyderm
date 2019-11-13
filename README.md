@@ -2,7 +2,7 @@
 
 This guide provides information and scripts for getting JupyterHub integrated with Pachyderm on the same kubernetes cluster. When auth is enabled on your Pachyderm cluster, JupyterHub will use it for auth. Python notebooks will also have built-in access to [Pachyderm's python client library](https://github.com/pachyderm/python-pachyderm).
 
-## Getting Started
+To deploy JupyterHub:
 
 1) [Deploy pachyderm](https://docs.pachyderm.com/latest/getting_started/local_installation/)
 2) [Install helm](https://helm.sh/docs/using_helm/#installing-helm)
