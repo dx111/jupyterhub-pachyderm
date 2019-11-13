@@ -12,18 +12,22 @@ MISCONFIGURATION_HTML = """
 """
 
 class PachydermAuthenticator(Authenticator):
+    # The Pachyderm auth token used for check if auth is enabled and
+    # authenticating credentials
     pach_auth_token = Unicode(
         "",
         config=True,
         help="Pachyderm auth token. Leave blank if Pachyderm auth is not enabled."
     )
 
+    # The root certs for pachd TLS
     pach_tls_certs = Unicode(
         "",
         config=True,
         help="Pachyderm root certs. Leave blank if Pachyderm TLS is not enabled, or if system certs should be used."
     )
 
+    # The global password used if Pachyderm auth is not enabled
     global_password = Unicode(
         "",
         config=True,
@@ -31,12 +35,17 @@ class PachydermAuthenticator(Authenticator):
     )
 
     def pachyderm_client(self, auth_token):
+        """Creates a new Pachyderm client"""
         return python_pachyderm.Client.new_in_cluster(
             auth_token=auth_token,
             root_certs=self.pach_tls_certs or None,
         )
 
     def is_pachyderm_auth_enabled(self, client):
+        """
+        Returns whether Pachyderm auth is enabled. Note that if this returns
+        `None` (rather than `False`), there is a misconfiguration.
+        """
         try:
             client.who_am_i()
         except python_pachyderm.RpcError as e:
@@ -61,6 +70,8 @@ class PachydermAuthenticator(Authenticator):
         auth_activated = self.is_pachyderm_auth_enabled(client)
 
         if auth_activated is None:
+            # Generate custom HTML to show on the login page if there's a
+            # misconfiguration
             return MISCONFIGURATION_HTML
 
         # If auth is activated, show the default login pane. This isn't ideal,
@@ -100,3 +111,16 @@ class PachydermAuthenticator(Authenticator):
         except python_pachyderm.RpcError as e:
             self.log.error("auth failed: %s", e)
             return
+
+    @gen.coroutine
+    def pre_spawn_start(self, user, spawner):
+        auth_state = yield user.get_auth_state()
+
+        if not auth_state:
+            return
+
+        token = auth_state.get("token")
+        if token:
+            spawner.environment.update({
+                "PACH_PYTHON_AUTH_TOKEN": token,
+            })

@@ -22,6 +22,9 @@ singleuser:
     name: ysimonson/jupyterhub-pachyderm-user
     tag: 0.8.2
 auth:
+  state:
+    enabled: true
+    cryptoKey: "{}"
   type: custom
   custom:
     className: pachyderm_authenticator.PachydermAuthenticator
@@ -168,6 +171,8 @@ def main():
     else:
         pach_auth_token = AUTH_TOKEN_PARSER.search(auth_token_stdout).groups()[0]
 
+    # TODO: add admin users?
+
     # get pach tls certs
     pach_tls_certs = ""
     if args.pach_tls_certs_path != "":
@@ -175,9 +180,16 @@ def main():
             pach_tls_certs = f.read()
 
     # generate the config
+    auth_state_crypto_key = secrets.token_hex(32)
     global_password = secrets.token_hex(32)
     secret_token = secrets.token_hex(32)
-    config = BASE_CONFIG.format(pach_auth_token, pach_tls_certs, global_password, secret_token)
+    config = BASE_CONFIG.format(
+        auth_state_crypto_key,
+        pach_auth_token,
+        pach_tls_certs,
+        global_password,
+        secret_token,
+    )
 
     if args.tls_host:
         config += TLS_CONFIG.format(args.tls_host, args.tls_email)
