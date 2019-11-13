@@ -196,11 +196,17 @@ def main():
         if not args.debug:
             os.unlink(config_path)
 
-    print("===> notes")
+    # print notes (if any)
+    notes = []
     if not pach_auth_token:
-        print("- Since Pachyderm auth doesn't appear to be enabled, JupyterHub will expect the following global password for users: {}".format(global_password))
+        notes.append("Since Pachyderm auth doesn't appear to be enabled, JupyterHub will expect the following global password for users: {}".format(global_password))
     if args.debug:
-        print("- Since debug is enabled, the config was not deleted. Because it contains sensitive data that can compromise your JupyterHub cluster, you should delete it. It's located locally at: {}".format(config_path))
+        notes.append("Since debug is enabled, the config was not deleted. Because it contains sensitive data that can compromise your JupyterHub cluster, you should delete it. It's located locally at: {}".format(config_path))
+    
+    if len(notes):
+        print("===> notes")
+        for note in notes:
+            print("- {}".format(note))
 
     return 0
 
