@@ -39,24 +39,24 @@ class PachydermAuthenticator(Authenticator):
             if details == "the auth service is not activated":
                 auth_activated = False
             elif details == "no authentication token (try logging in)":
-                self.log.error("JupyterHub is configured to not use Pachyderm auth, even though it is enabled. Please fix and redeploy.")
+                self.log.error("JupyterHub is configured to not use Pachyderm auth, even though it is enabled. Please manually reconfigure, or redeploy JupyterHub.")
                 return
             elif details == "provided auth token is corrupted or has expired (try logging in again)":
-                self.log.error("JupyterHub is configured with a bad Pachyderm auth token. Please fix and re-deploy.")
+                self.log.error("JupyterHub is configured with a bad Pachyderm auth token. Please manually reconfigure, or redeploy JupyterHub.")
                 return
             else:
                 raise
 
         if not auth_activated:
-            if data["global_password"] == self.password:
+            if data["password"] == self.global_password:
                 return data["username"]
             return None
 
         try:
-            if self.password.startswith("otp/"):
-                user_auth_token = client.authenticate_one_time_password(self.password)
+            if data["password"].startswith("otp/"):
+                user_auth_token = client.authenticate_one_time_password(data["password"])
             else:
-                user_auth_token = client.authenticate_github(self.password)
+                user_auth_token = client.authenticate_github(data["password"])
 
             user_client = python_pachyderm.Client.new_in_cluster(
                 auth_token=user_auth_token,

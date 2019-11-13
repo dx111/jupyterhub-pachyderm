@@ -9,7 +9,8 @@ import argparse
 import tempfile
 import subprocess
 
-KUBE_CONTEXT_INFO_PARSER = re.compile(r"^\* +[^ ]+ +([^ ]+) +([^ ]+) +([^ ]*)")
+KUBE_CONTEXT_INFO_PARSER = re.compile(r"^\* +[^ ]+ +([^ ]+) +([^ ]+) +([^ \n]*)\n", re.MULTILINE)
+AUTH_TOKEN_PARSER = re.compile(r"  Token: ([0-9a-f]+)", re.MULTILINE)
 
 BASE_CONFIG = """
 hub:
@@ -29,7 +30,7 @@ auth:
       pach_tls_certs: "{}"
       global_password: "{}"
 proxy:
-  secretToken: {}
+  secretToken: "{}"
 """
 
 TLS_CONFIG = """
@@ -40,12 +41,30 @@ TLS_CONFIG = """
       contactEmail: "{}"
 """
 
-def run(cmd, *args, capture=False):
-    proc = subprocess.run([cmd, *args], capture_output=capture)
-    if proc.stderr:
-        sys.stderr.write(proc.stderr.decode("utf8"))
-    proc.check_returncode()
-    return proc.stdout.decode("utf8") if proc.stdout else None
+def run(cmd, *args, capture_stdout=False, capture_stderr=False, raise_on_error=True):
+    proc = subprocess.run(
+        [cmd, *args],
+        stdout=subprocess.PIPE if capture_stdout else None,
+        stderr=subprocess.PIPE if capture_stderr else None,
+    )
+
+    stdout = proc.stdout.decode("utf8") if proc.stdout else None
+    stderr = proc.stderr.decode("utf8") if proc.stderr else None
+
+    if raise_on_error:
+        try:
+            proc.check_returncode()
+        except:
+            print(stdout)
+            print(stderr, file=sys.stderr)
+            raise
+
+    if capture_stdout and capture_stderr:
+        return (stdout, stderr)
+    elif capture_stdout:
+        return stdout
+    elif capture_stderr:
+        return stderr
 
 def main():
     parser = argparse.ArgumentParser(description="Sets up JupyterHub on a kubernetes cluster that has Pachyderm running on it.")
@@ -85,8 +104,8 @@ def main():
     # parse pach context
     try:
         print("===> getting pachyderm context")
-        pach_context_name = run("pachctl", "config", "get", "active-context", capture=True).strip()
-        pach_context_output = run("pachctl", "config", "get", "context", pach_context_name, capture=True)
+        pach_context_name = run("pachctl", "config", "get", "active-context", capture_stdout=True).strip()
+        pach_context_output = run("pachctl", "config", "get", "context", pach_context_name, capture_stdout=True)
         pach_context_json = json.loads(pach_context_output)
         pach_cluster = pach_context_json["cluster_name"]
         pach_auth_info = pach_context_json["auth_info"]
@@ -104,10 +123,9 @@ def main():
     # parse kubectl context
     try:
         print("===> getting kubernetes context")
-        kube_context_name = run("kubectl", "config", "current-context", capture=True).strip()
-        kube_context_output = run("kubectl", "config", "get-contexts", kube_context_name, capture=True)
-        kube_context_output = kube_context_output.split("\n")[1]
-        kube_cluster, kube_auth_info, kube_namespace = KUBE_CONTEXT_INFO_PARSER.match(kube_context_output).groups()
+        kube_context_name = run("kubectl", "config", "current-context", capture_stdout=True).strip()
+        kube_context_output = run("kubectl", "config", "get-contexts", kube_context_name, capture_stdout=True)
+        kube_cluster, kube_auth_info, kube_namespace = KUBE_CONTEXT_INFO_PARSER.search(kube_context_output).groups()
         kube_namespace = kube_namespace or "default"
     except Exception as e:
         print("could not parse kube context info: {}".format(e), file=sys.stderr)
@@ -140,8 +158,15 @@ def main():
         run("kubectl", "patch", "deployment", "tiller-deploy", "--namespace=kube-system", "--type=json", """--patch='[{"op": "add", "path": "/spec/template/spec/containers/0/command", "value": ["/tiller", "--listen=localhost:44134"]}]'""")
 
     # generate pach auth token
-    # TODO
+    print("===> generating a pach auth token")
     pach_auth_token = ""
+    auth_token_stdout, auth_token_stderr = run("pachctl", "auth", "get-auth-token", capture_stdout=True, capture_stderr=True, raise_on_error=False)
+    if auth_token_stderr:
+        if auth_token_stderr.strip() != "the auth service is not activated":
+            print(auth_token_stderr, file=sys.stderr)
+            return 4
+    else:
+        pach_auth_token = AUTH_TOKEN_PARSER.search(auth_token_stdout).groups()[0]
 
     # get pach tls certs
     pach_tls_certs = ""
@@ -150,19 +175,15 @@ def main():
             pach_tls_certs = f.read()
 
     # generate the config
-    default_password = secrets.token_hex(32)
+    global_password = secrets.token_hex(32)
     secret_token = secrets.token_hex(32)
-    config = BASE_CONFIG.format(pach_auth_token, pach_tls_certs, default_password, secret_token)
+    config = BASE_CONFIG.format(pach_auth_token, pach_tls_certs, global_password, secret_token)
 
     if args.tls_host:
         config += TLS_CONFIG.format(args.tls_host, args.tls_email)
 
     print("===> generating config")
     with tempfile.NamedTemporaryFile(delete=False) as f:
-        if args.debug:
-            print("writing config to '{}'".format(f.name))
-            print("since debug mode is enabled, this file will not be automatically deleted")
-            print("you should manually delete this file if this JupyterHub deployment is kept, as it contains secrets")
         f.write(config.encode("utf8"))
         f.close()
         config_path = f.name
@@ -175,10 +196,11 @@ def main():
         if not args.debug:
             os.unlink(config_path)
 
-    # TODO: don't show this message if pach auth is enabled
-    print("===> wrapping up")
-    print("if you don't enable auth on your pachyderm cluster, JupyterHub will expect the following password for users:")
-    print(default_password)
+    print("===> notes")
+    if not pach_auth_token:
+        print("- Since Pachyderm auth doesn't appear to be enabled, JupyterHub will expect the following global password for users: {}".format(global_password))
+    if args.debug:
+        print("- Since debug is enabled, the config was not deleted. Because it contains sensitive data that can compromise your JupyterHub cluster, you should delete it. It's located locally at: {}".format(config_path))
 
     return 0
 
