@@ -8,7 +8,9 @@ To deploy JupyterHub:
 2) [Install helm](https://helm.sh/docs/using_helm/#installing-helm)
 3) Run `./init.py`, which will deploy JupyterHub on the kubernetes cluster to work with Pachyderm. There are various options for debugging and configuring the deployment -- see `./init.py --help` for details.
 
-After `init.py` completes, JupyterHub should be accesible within a couple of minutes. It should be reachable on port 80 of your cluster's hostname. To authenticate on JupyterHub:
+JupyterHub should now be reachable on port 80 of your cluster's hostname. If you navigate to it, you may get a `Service Unavailable` error for a couple of minutes while JupyterHub finishes spinning up.
+
+To authenticate on JupyterHub:
 
 - If auth is enabled on the Pachyderm cluster, use a github or OTP auth token for your password. Your JupyterHub username will be the same as your Pachyderm username.
 - If auth is not enabled, `init.py` will have printed a global password for you to use to authenticate. Your JupyterHub username will be whatever you set when logging in.
