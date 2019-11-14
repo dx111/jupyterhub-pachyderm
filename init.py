@@ -11,6 +11,7 @@ import subprocess
 
 KUBE_CONTEXT_INFO_PARSER = re.compile(r"^\* +[^ ]+ +([^ ]+) +([^ ]+) +([^ \n]*)\n", re.MULTILINE)
 AUTH_TOKEN_PARSER = re.compile(r"  Token: ([0-9a-f]+)", re.MULTILINE)
+WHO_AM_I_PARSER = re.compile(r"You are \"(.+)\"")
 
 BASE_CONFIG = """
 hub:
@@ -21,6 +22,9 @@ singleuser:
   image:
     name: ysimonson/jupyterhub-pachyderm-user
     tag: 0.8.2
+"""
+
+AUTH_BASE_CONFIG = """
 auth:
   state:
     enabled: true
@@ -32,11 +36,20 @@ auth:
       pach_auth_token: "{}"
       pach_tls_certs: "{}"
       global_password: "{}"
+"""
+
+AUTH_ADMIN_CONFIG = """
+  admin:
+    users:
+      - "{}"
+"""
+
+PROXY_BASE_CONFIG = """
 proxy:
   secretToken: "{}"
 """
 
-TLS_CONFIG = """
+PROXY_TLS_CONFIG = """
   https:
     hosts:
       - "{}"
@@ -69,6 +82,18 @@ def run(cmd, *args, capture_stdout=False, capture_stderr=False, raise_on_error=T
     elif capture_stderr:
         return stderr
 
+def run_auth_command(*args):
+    stdout, stderr = run("pachctl", "auth", *args, capture_stdout=True, capture_stderr=True, raise_on_error=False)
+
+    if stderr:
+        print(stderr, file=sys.stderr)
+        if "the auth service is not activated" in stderr:
+            return None
+        else:
+            raise Exception("unexpected stderr")
+
+    return stdout
+
 def main():
     parser = argparse.ArgumentParser(description="Sets up JupyterHub on a kubernetes cluster that has Pachyderm running on it.")
     parser.add_argument("--debug", default=False, action="store_true", help="Debug mode")
@@ -87,10 +112,18 @@ def main():
         return 1
 
     # print versions, which in the process validates that dependencies are installed
-    print("===> getting kubectl version")
-    run("kubectl", "version")
-    print("===> getting pachyderm version")
-    run("pachctl", "version")
+    try:
+        print("===> getting kubectl version")
+        run("kubectl", "version")
+    except subprocess.CalledProcessError as e:
+        print("could not check kubectl version; ensure kubectl is installed: {}".format(e), file=sys.stderr)
+        return 2
+    try:
+        print("===> getting pachctl version")
+        run("pachctl", "version")
+    except subprocess.CalledProcessError as e:
+        print("could not check pachctl version; ensure pachctl is installed: {}".format(e), file=sys.stderr)
+        return 2
 
     install_tiller = False
     try:
@@ -98,11 +131,16 @@ def main():
         run("helm", "version")
     except subprocess.CalledProcessError:
         if args.install_tiller:
-            # make sure helm is installed still
-            run("helm", "version", "--client")
             install_tiller = True
         else:
             raise
+    if install_tiller:
+        # make sure helm is installed still
+        try:
+            run("helm", "version", "--client")
+        except subprocess.CalledProcessError as e:
+            print("could not check helm version; ensure helm is installed: {}".format(e), file=sys.stderr)
+            return 2
 
     # parse pach context
     try:
@@ -115,9 +153,7 @@ def main():
         pach_namespace = pach_context_json["namespace"] or "default"
     except Exception as e:
         print("could not parse pach context info: {}".format(e), file=sys.stderr)
-        if args.debug:
-            raise
-        return 2
+        return 3
     if args.debug:
         print("pach cluster: {}".format(pach_cluster))
         print("pach auth info: {}".format(pach_auth_info))
@@ -132,9 +168,7 @@ def main():
         kube_namespace = kube_namespace or "default"
     except Exception as e:
         print("could not parse kube context info: {}".format(e), file=sys.stderr)
-        if args.debug:
-            raise
-        return 2
+        return 3
     if args.debug:
         print("kube cluster: {}".format(kube_cluster))
         print("kube auth info: {}".format(kube_auth_info))
@@ -144,34 +178,21 @@ def main():
     print("===> comparing pachyderm/kubernetes contexts")
     if pach_cluster != kube_cluster:
         print("the active pach context's cluster name ('{}') is not the same as the current kubernetes context's cluster name ('{}')".format(pach_cluster, kube_cluster), file=sys.stderr)
-        return 3
+        return 4
     if pach_auth_info != kube_auth_info:
         print("the active pach context's auth info ('{}') is not the same as the current kubernetes context's auth info ('{}')".format(pach_auth_info, kube_auth_info), file=sys.stderr)
-        return 3
+        return 4
     if pach_namespace != kube_namespace:
         print("the active pach context's namespace ('{}') is not the same as the current kubernetes context's namespace ('{}')".format(pach_namespace, kube_namespace), file=sys.stderr)
-        return 3
-
-    # install tiller
-    if install_tiller:
-        print("===> installing tiller")
-        run("kubectl", "--namespace", "kube-system", "create", "serviceaccount", "tiller")
-        run("kubectl", "create", "clusterrolebinding", "tiller", "--clusterrole", "cluster-admin", "--serviceaccount=kube-system:tiller")
-        run("helm", "init", "--service-account", "tiller", "--wait")
-        run("kubectl", "patch", "deployment", "tiller-deploy", "--namespace=kube-system", "--type=json", """--patch='[{"op": "add", "path": "/spec/template/spec/containers/0/command", "value": ["/tiller", "--listen=localhost:44134"]}]'""")
+        return 4
 
     # generate pach auth token
     print("===> generating a pach auth token")
-    pach_auth_token = ""
-    auth_token_stdout, auth_token_stderr = run("pachctl", "auth", "get-auth-token", capture_stdout=True, capture_stderr=True, raise_on_error=False)
-    if auth_token_stderr:
-        if auth_token_stderr.strip() != "the auth service is not activated":
-            print(auth_token_stderr, file=sys.stderr)
-            return 4
-    else:
-        pach_auth_token = AUTH_TOKEN_PARSER.search(auth_token_stdout).groups()[0]
-
-    # TODO: add admin users?
+    admin_user_stdout = run_auth_command("whoami")
+    admin_user = WHO_AM_I_PARSER.match(admin_user_stdout).groups()[0] if admin_user_stdout else None
+    pach_auth_token_stdout = run_auth_command("get-auth-token")
+    pach_auth_token = AUTH_TOKEN_PARSER.search(pach_auth_token_stdout).groups()[0] if pach_auth_token_stdout else ""
+    assert (admin_user and pach_auth_token) or (not admin_user and not pach_auth_token)
 
     # get pach tls certs
     pach_tls_certs = ""
@@ -183,22 +204,32 @@ def main():
     auth_state_crypto_key = secrets.token_hex(32)
     global_password = secrets.token_hex(32)
     secret_token = secrets.token_hex(32)
-    config = BASE_CONFIG.format(
-        auth_state_crypto_key,
-        pach_auth_token,
-        pach_tls_certs,
-        global_password,
-        secret_token,
-    )
 
+    config = BASE_CONFIG
+    config += AUTH_BASE_CONFIG.format(auth_state_crypto_key, pach_auth_token, pach_tls_certs, global_password)
+    if admin_user:
+        config += AUTH_ADMIN_CONFIG.format(admin_user)
+    config += PROXY_BASE_CONFIG.format(secret_token)
     if args.tls_host:
-        config += TLS_CONFIG.format(args.tls_host, args.tls_email)
+        config += PROXY_TLS_CONFIG.format(args.tls_host, args.tls_email)
 
     print("===> generating config")
     with tempfile.NamedTemporaryFile(delete=False) as f:
         f.write(config.encode("utf8"))
         f.close()
         config_path = f.name
+
+    # install tiller
+    if install_tiller:
+        print("===> installing tiller")
+        try:
+            run("kubectl", "--namespace", "kube-system", "create", "serviceaccount", "tiller")
+            run("kubectl", "create", "clusterrolebinding", "tiller", "--clusterrole", "cluster-admin", "--serviceaccount=kube-system:tiller")
+            run("helm", "init", "--service-account", "tiller", "--wait")
+            run("kubectl", "patch", "deployment", "tiller-deploy", "--namespace=kube-system", "--type=json", """--patch='[{"op": "add", "path": "/spec/template/spec/containers/0/command", "value": ["/tiller", "--listen=localhost:44134"]}]'""")
+        except subprocess.CalledProcessError as e:
+            print("failed to install tiller: {}".format(e), file=sys.stderr)
+            return 5
 
     # install JupyterHub
     try:
@@ -209,17 +240,14 @@ def main():
             os.unlink(config_path)
 
     # print notes (if any)
-    notes = []
-    if not pach_auth_token:
-        notes.append("Since Pachyderm auth doesn't appear to be enabled, JupyterHub will expect the following global password for users: {}".format(global_password))
+    print("===> notes")
+    if not admin_user:
+        print("- Since Pachyderm auth doesn't appear to be enabled, JupyterHub will expect the following global password for users: {}".format(global_password))
+    else:
+        print("- Since Pachyderm auth is enabled, the logged in pachctl user ('{}') has been set as the JupyterHub admin".format(admin_user))
     if args.debug:
-        notes.append("Since debug is enabled, the config was not deleted. Because it contains sensitive data that can compromise your JupyterHub cluster, you should delete it. It's located locally at: {}".format(config_path))
+        print("- Since debug is enabled, the config was not deleted. Because it contains sensitive data that can compromise your JupyterHub cluster, you should delete it. It's located locally at: {}".format(config_path))
     
-    if len(notes):
-        print("===> notes")
-        for note in notes:
-            print("- {}".format(note))
-
     return 0
 
 if __name__ == "__main__":
