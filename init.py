@@ -7,6 +7,7 @@ import json
 import secrets
 import argparse
 import tempfile
+import traceback
 import subprocess
 
 KUBE_CONTEXT_INFO_PARSER = re.compile(r"^\* +[^ ]+ +([^ ]+) +([^ ]+) +([^ \n]*)\n", re.MULTILINE)
@@ -57,6 +58,9 @@ PROXY_TLS_CONFIG = """
       contactEmail: "{}"
 """
 
+class ApplicationError(Exception):
+    pass
+
 def run(cmd, *args, capture_stdout=False, capture_stderr=False, raise_on_error=True):
     proc = subprocess.run(
         [cmd, *args],
@@ -94,53 +98,28 @@ def run_auth_command(*args):
 
     return stdout
 
-def main():
-    parser = argparse.ArgumentParser(description="Sets up JupyterHub on a kubernetes cluster that has Pachyderm running on it.")
-    parser.add_argument("--debug", default=False, action="store_true", help="Debug mode")
-    parser.add_argument("--pach-tls-certs-path", default="", help="Path to a root certs file for Pachyderm TLS.")
-    parser.add_argument("--tls-host", default="", help="If set, TLS is enabled on JupyterHub via Let's Encrypt. The value is a hostname associated with the TLS certificate.")
-    parser.add_argument("--tls-email", default="", help="If set, TLS is enabled on JupyterHub via Let's Encrypt. The value is an email address associated with the TLS certificate.")
-    parser.add_argument("--install-tiller", default=False, action="store_true", help="Installs tiller if it's not installed already.")
-    args = parser.parse_args()
+def run_version_check(cmd, *args):
+    try:
+        run(cmd, *args)
+    except subprocess.CalledProcessError as e:
+        raise ApplicationError("could not check {} version; ensure {} is installed".format(cmd, cmd)) from e
 
-    # validate args
-    if args.tls_host and not args.tls_email:
-        print("TLS host specified, but no email", file=sys.stderr)
-        return 1
-    if args.tls_email and not args.tls_host:
-        print("TLS email specified, but no host", file=sys.stderr)
-        return 1
-
+def main(debug, pach_tls_certs, tls_host, tls_email, install_tiller):
     # print versions, which in the process validates that dependencies are installed
-    try:
-        print("===> getting kubectl version")
-        run("kubectl", "version")
-    except subprocess.CalledProcessError as e:
-        print("could not check kubectl version; ensure kubectl is installed: {}".format(e), file=sys.stderr)
-        return 2
-    try:
-        print("===> getting pachctl version")
-        run("pachctl", "version")
-    except subprocess.CalledProcessError as e:
-        print("could not check pachctl version; ensure pachctl is installed: {}".format(e), file=sys.stderr)
-        return 2
+    print("===> checking dependencies are installed")
+    run_version_check("kubectl", "version")
+    run_version_check("pachctl", "version")
 
-    install_tiller = False
     try:
-        print("===> getting helm version")
-        run("helm", "version")
-    except subprocess.CalledProcessError:
-        if args.install_tiller:
-            install_tiller = True
-        else:
+        run_version_check("helm", "version")
+        # no need to install tiller because it's already installed
+        install_tiller = False
+    except ApplicationError:
+        if not install_tiller:
             raise
     if install_tiller:
         # make sure helm is installed still
-        try:
-            run("helm", "version", "--client")
-        except subprocess.CalledProcessError as e:
-            print("could not check helm version; ensure helm is installed: {}".format(e), file=sys.stderr)
-            return 2
+        run_version_check("helm", "version", "--client")
 
     # parse pach context
     try:
@@ -152,9 +131,8 @@ def main():
         pach_auth_info = pach_context_json["auth_info"]
         pach_namespace = pach_context_json["namespace"] or "default"
     except Exception as e:
-        print("could not parse pach context info: {}".format(e), file=sys.stderr)
-        return 3
-    if args.debug:
+        raise ApplicationError("could not parse pach context info") from e
+    if debug:
         print("pach cluster: {}".format(pach_cluster))
         print("pach auth info: {}".format(pach_auth_info))
         print("pach namespace: {}".format(pach_namespace))
@@ -167,9 +145,8 @@ def main():
         kube_cluster, kube_auth_info, kube_namespace = KUBE_CONTEXT_INFO_PARSER.search(kube_context_output).groups()
         kube_namespace = kube_namespace or "default"
     except Exception as e:
-        print("could not parse kube context info: {}".format(e), file=sys.stderr)
-        return 3
-    if args.debug:
+        raise ApplicationError("could not parse kube context info") from e
+    if debug:
         print("kube cluster: {}".format(kube_cluster))
         print("kube auth info: {}".format(kube_auth_info))
         print("kube namespace: {}".format(kube_namespace))
@@ -177,14 +154,11 @@ def main():
     # verify that the contexts are pointing to the same thing
     print("===> comparing pachyderm/kubernetes contexts")
     if pach_cluster != kube_cluster:
-        print("the active pach context's cluster name ('{}') is not the same as the current kubernetes context's cluster name ('{}')".format(pach_cluster, kube_cluster), file=sys.stderr)
-        return 4
+        raise ApplicationError("the active pach context's cluster name ('{}') is not the same as the current kubernetes context's cluster name ('{}')".format(pach_cluster, kube_cluster))
     if pach_auth_info != kube_auth_info:
-        print("the active pach context's auth info ('{}') is not the same as the current kubernetes context's auth info ('{}')".format(pach_auth_info, kube_auth_info), file=sys.stderr)
-        return 4
+        raise ApplicationError("the active pach context's auth info ('{}') is not the same as the current kubernetes context's auth info ('{}')".format(pach_auth_info, kube_auth_info))
     if pach_namespace != kube_namespace:
-        print("the active pach context's namespace ('{}') is not the same as the current kubernetes context's namespace ('{}')".format(pach_namespace, kube_namespace), file=sys.stderr)
-        return 4
+        raise ApplicationError("the active pach context's namespace ('{}') is not the same as the current kubernetes context's namespace ('{}')".format(pach_namespace, kube_namespace))
 
     # generate pach auth token
     print("===> generating a pach auth token")
@@ -193,12 +167,6 @@ def main():
     pach_auth_token_stdout = run_auth_command("get-auth-token")
     pach_auth_token = AUTH_TOKEN_PARSER.search(pach_auth_token_stdout).groups()[0] if pach_auth_token_stdout else ""
     assert (admin_user and pach_auth_token) or (not admin_user and not pach_auth_token)
-
-    # get pach tls certs
-    pach_tls_certs = ""
-    if args.pach_tls_certs_path != "":
-        with open(args.pach_tls_certs_path, "r") as f:
-            pach_tls_certs = f.read()
 
     # generate the config
     auth_state_crypto_key = secrets.token_hex(32)
@@ -210,8 +178,8 @@ def main():
     if admin_user:
         config += AUTH_ADMIN_CONFIG.format(admin_user)
     config += PROXY_BASE_CONFIG.format(secret_token)
-    if args.tls_host:
-        config += PROXY_TLS_CONFIG.format(args.tls_host, args.tls_email)
+    if tls_host:
+        config += PROXY_TLS_CONFIG.format(tls_host, tls_email)
 
     print("===> generating config")
     with tempfile.NamedTemporaryFile(delete=False) as f:
@@ -228,15 +196,14 @@ def main():
             run("helm", "init", "--service-account", "tiller", "--wait")
             run("kubectl", "patch", "deployment", "tiller-deploy", "--namespace=kube-system", "--type=json", """--patch='[{"op": "add", "path": "/spec/template/spec/containers/0/command", "value": ["/tiller", "--listen=localhost:44134"]}]'""")
         except subprocess.CalledProcessError as e:
-            print("failed to install tiller: {}".format(e), file=sys.stderr)
-            return 5
+            raise ApplicationError("failed to install tiller") from e
 
     # install JupyterHub
     try:
         print("===> installing jupyterhub")
         run("helm", "upgrade", "--install", "jupyterhub", "jupyterhub/jupyterhub", "--version=0.8.2", "--values", config_path)
     finally:
-        if not args.debug:
+        if not debug:
             os.unlink(config_path)
 
     # print notes (if any)
@@ -245,10 +212,40 @@ def main():
         print("- Since Pachyderm auth doesn't appear to be enabled, JupyterHub will expect the following global password for users: {}".format(global_password))
     else:
         print("- Since Pachyderm auth is enabled, the logged in pachctl user ('{}') has been set as the JupyterHub admin".format(admin_user))
-    if args.debug:
+    if debug:
         print("- Since debug is enabled, the config was not deleted. Because it contains sensitive data that can compromise your JupyterHub cluster, you should delete it. It's located locally at: {}".format(config_path))
-    
-    return 0
 
 if __name__ == "__main__":
-    sys.exit(main())
+    parser = argparse.ArgumentParser(description="Sets up JupyterHub on a kubernetes cluster that has Pachyderm running on it.")
+    parser.add_argument("--debug", default=False, action="store_true", help="Debug mode")
+    parser.add_argument("--pach-tls-certs-path", default="", help="Path to a root certs file for Pachyderm TLS.")
+    parser.add_argument("--tls-host", default="", help="If set, TLS is enabled on JupyterHub via Let's Encrypt. The value is a hostname associated with the TLS certificate.")
+    parser.add_argument("--tls-email", default="", help="If set, TLS is enabled on JupyterHub via Let's Encrypt. The value is an email address associated with the TLS certificate.")
+    parser.add_argument("--install-tiller", default=False, action="store_true", help="Installs tiller if it's not installed already.")
+    args = parser.parse_args()
+
+    # validate args
+    if args.tls_host and not args.tls_email:
+        print("TLS host specified, but no email", file=sys.stderr)
+        sys.exit(1)
+    if args.tls_email and not args.tls_host:
+        print("TLS email specified, but no host", file=sys.stderr)
+        sys.exit(1)
+
+    # get pach tls certs
+    pach_tls_certs = ""
+    if args.pach_tls_certs_path != "":
+        try:
+            with open(args.pach_tls_certs_path, "r") as f:
+                pach_tls_certs = f.read()
+        except Exception as e:
+            print("failed to read pach TLS certs at '{}': {}".format(args.pach_tls_certs_path, e), file=sys.stderr)
+            sys.exit(1)
+
+    try:
+        main(args.debug, pach_tls_certs, args.tls_host, args.tls_email, args.install_tiller)
+    except ApplicationError as e:
+        print("error: {}".format(e), file=sys.stderr)
+        if args.debug:
+            traceback.print_exc()
+        sys.exit(2)
