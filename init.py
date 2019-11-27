@@ -107,22 +107,12 @@ def run_version_check(cmd, *args):
 def print_section(section):
     print("===> {}".format(section))
 
-def main(debug, pach_tls_certs, tls_host, tls_email, install_tiller):
+def main(debug, pach_tls_certs, tls_host, tls_email):
     # print versions, which in the process validates that dependencies are installed
     print_section("checking dependencies are installed")
     run_version_check("kubectl", "version")
     run_version_check("pachctl", "version")
-
-    try:
-        run_version_check("helm", "version")
-        # no need to install tiller because it's already installed
-        install_tiller = False
-    except ApplicationError:
-        if not install_tiller:
-            raise
-    if install_tiller:
-        # make sure helm is installed still
-        run_version_check("helm", "version", "--client")
+    run_version_check("helm", "version")
 
     # parse pach context
     print_section("getting pachyderm context")
@@ -190,21 +180,10 @@ def main(debug, pach_tls_certs, tls_host, tls_email, install_tiller):
         f.close()
         config_path = f.name
 
-    # install tiller
-    if install_tiller:
-        print_section("installing tiller")
-        try:
-            run("kubectl", "--namespace", "kube-system", "create", "serviceaccount", "tiller")
-            run("kubectl", "create", "clusterrolebinding", "tiller", "--clusterrole", "cluster-admin", "--serviceaccount=kube-system:tiller")
-            run("helm", "init", "--service-account", "tiller", "--wait")
-            run("kubectl", "patch", "deployment", "tiller-deploy", "--namespace=kube-system", "--type=json", """--patch='[{"op": "add", "path": "/spec/template/spec/containers/0/command", "value": ["/tiller", "--listen=localhost:44134"]}]'""")
-        except subprocess.CalledProcessError as e:
-            raise ApplicationError("failed to install tiller") from e
-
     # install JupyterHub
     print_section("installing jupyterhub")
     try:
-        run("helm", "upgrade", "--install", "jupyterhub", "jupyterhub/jupyterhub", "--version=0.8.2", "--values", config_path)
+        run("helm", "install", "jupyterhub/jupyterhub", "--version=0.8.2", "--debug", "--dry-run", "--values", config_path)
     finally:
         if not debug:
             os.unlink(config_path)
@@ -224,7 +203,6 @@ if __name__ == "__main__":
     parser.add_argument("--pach-tls-certs-path", default="", help="Path to a root certs file for Pachyderm TLS.")
     parser.add_argument("--tls-host", default="", help="If set, TLS is enabled on JupyterHub via Let's Encrypt. The value is a hostname associated with the TLS certificate.")
     parser.add_argument("--tls-email", default="", help="If set, TLS is enabled on JupyterHub via Let's Encrypt. The value is an email address associated with the TLS certificate.")
-    parser.add_argument("--install-tiller", default=False, action="store_true", help="Installs tiller if it's not installed already.")
     args = parser.parse_args()
 
     # validate args
@@ -246,7 +224,7 @@ if __name__ == "__main__":
             sys.exit(1)
 
     try:
-        main(args.debug, pach_tls_certs, args.tls_host, args.tls_email, args.install_tiller)
+        main(args.debug, pach_tls_certs, args.tls_host, args.tls_email)
     except ApplicationError as e:
         print("error: {}".format(e), file=sys.stderr)
         if args.debug:
