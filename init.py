@@ -183,7 +183,7 @@ def main(debug, pach_tls_certs, tls_host, tls_email):
     # install JupyterHub
     print_section("installing jupyterhub")
     try:
-        run("helm", "install", "jupyterhub/jupyterhub", "--version=0.8.2", "--debug", "--dry-run", "--values", config_path)
+        run("helm", "install", "jupyterhub/jupyterhub", "--version=0.8.2", "--values", config_path)
     finally:
         if not debug:
             os.unlink(config_path)
