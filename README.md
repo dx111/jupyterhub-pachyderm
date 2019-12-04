@@ -5,7 +5,7 @@ This guide provides information and scripts for getting JupyterHub integrated wi
 To deploy JupyterHub:
 
 1) [Deploy pachyderm](https://docs.pachyderm.com/latest/getting_started/local_installation/).
-2) [Install helm](https://helm.sh/docs/using_helm/#installing-helm).
+2) [Install helm 3](https://helm.sh/docs/using_helm/#installing-helm).
 3) Run `./init.py`, which will deploy JupyterHub on the kubernetes cluster to work with Pachyderm. There are various options for debugging and configuring the deployment -- see `./init.py --help` for details.
 
 JupyterHub should now be reachable on port 80 of your cluster's hostname. If you navigate to it, you may get a `Service Unavailable` error for a couple of minutes while JupyterHub finishes spinning up.

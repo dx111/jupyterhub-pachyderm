@@ -114,6 +114,10 @@ def main(debug, pach_tls_certs, tls_host, tls_email):
     run_version_check("pachctl", "version")
     run_version_check("helm", "version")
 
+    print_section("configuring helm")
+    run("helm", "repo", "add", "jupyterhub", "https://jupyterhub.github.io/helm-chart/")
+    run("helm", "repo", "update")
+
     # parse pach context
     print_section("getting pachyderm context")
     try:
@@ -183,7 +187,7 @@ def main(debug, pach_tls_certs, tls_host, tls_email):
     # install JupyterHub
     print_section("installing jupyterhub")
     try:
-        run("helm", "install", "jupyterhub/jupyterhub", "--version=0.8.2", "--values", config_path)
+        run("helm", "install", "jupyterhub/jupyterhub", "--version=0.8.2", "--generate-name", "--values", config_path)
     finally:
         if not debug:
             os.unlink(config_path)
