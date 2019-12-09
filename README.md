@@ -38,6 +38,8 @@ Our `init.py` only provides basic configuration changes, but JupyterHub has a lo
 
 If `init.py` finished successfully but you're having trouble getting to JupyterHub, ensure you've followed the cloud-specific instructions in [JupyterHub's setup guides](https://zero-to-jupyterhub.readthedocs.io/en/latest/create-k8s-cluster.html).
 
+If you're deploying to `minikube`, try navigating to one of the URLs printed out when you run `minikube service proxy-public --url`.
+
 ### Cannot authenticate to JupyterHub
 
 If you cannot authenticate even though you're passing the correct credentials, check the pod logs for hub. You'll likely see an error caused by a misconfiguration. Misconfigurations can happen from either passing in incorrect values to `init.py`, or if the cluster has changed since JupyterHub was last deployed (e.g. if auth was enabled, or if the Pachyderm auth token used by JupyterHub has expired) -- in either case, re-deploying can fix the issue.
