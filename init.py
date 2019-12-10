@@ -18,44 +18,44 @@ BASE_CONFIG = """
 hub:
   image:
     name: ysimonson/jupyterhub-pachyderm-hub
-    tag: 0.8.2
+    tag: "{jupyterhub_version}"
 singleuser:
   image:
     name: ysimonson/jupyterhub-pachyderm-user
-    tag: 0.8.2
+    tag: "{jupyterhub_version}"
 """
 
 AUTH_BASE_CONFIG = """
 auth:
   state:
     enabled: true
-    cryptoKey: "{}"
+    cryptoKey: "{auth_state_crypto_key}"
   type: custom
   custom:
     className: pachyderm_authenticator.PachydermAuthenticator
     config:
-      pach_auth_token: "{}"
-      pach_tls_certs: "{}"
-      global_password: "{}"
+      pach_auth_token: "{pach_auth_token}"
+      pach_tls_certs: "{pach_tls_certs}"
+      global_password: "{global_password}"
 """
 
 AUTH_ADMIN_CONFIG = """
   admin:
     users:
-      - "{}"
+      - "{admin_user}"
 """
 
 PROXY_BASE_CONFIG = """
 proxy:
-  secretToken: "{}"
+  secretToken: "{secret_token}"
 """
 
 PROXY_TLS_CONFIG = """
   https:
     hosts:
-      - "{}"
+      - "{tls_host}"
     letsencrypt:
-      contactEmail: "{}"
+      contactEmail: "{tls_email}"
 """
 
 class ApplicationError(Exception):
@@ -107,7 +107,7 @@ def run_version_check(cmd, *args):
 def print_section(section):
     print("===> {}".format(section))
 
-def main(debug, pach_tls_certs, tls_host, tls_email):
+def main(debug, pach_tls_certs, tls_host, tls_email, jupyterhub_version):
     # print versions, which in the process validates that dependencies are installed
     print_section("checking dependencies are installed")
     run_version_check("kubectl", "version")
@@ -171,13 +171,19 @@ def main(debug, pach_tls_certs, tls_host, tls_email):
     global_password = secrets.token_hex(32)
     secret_token = secrets.token_hex(32)
 
-    config = BASE_CONFIG
-    config += AUTH_BASE_CONFIG.format(auth_state_crypto_key, pach_auth_token, pach_tls_certs, global_password)
+    config = BASE_CONFIG.format(jupyterhub_version=jupyterhub_version)
+
+    config += AUTH_BASE_CONFIG.format(
+        auth_state_crypto_key=auth_state_crypto_key,
+        pach_auth_token=pach_auth_token,
+        pach_tls_certs=pach_tls_certs,
+        global_password=global_password,
+    )
     if admin_user:
-        config += AUTH_ADMIN_CONFIG.format(admin_user)
-    config += PROXY_BASE_CONFIG.format(secret_token)
+        config += AUTH_ADMIN_CONFIG.format(admin_user=admin_user)
+    config += PROXY_BASE_CONFIG.format(secret_token=secret_token)
     if tls_host:
-        config += PROXY_TLS_CONFIG.format(tls_host, tls_email)
+        config += PROXY_TLS_CONFIG.format(tls_host=tls_host, tls_email=tls_email)
 
     with tempfile.NamedTemporaryFile(delete=False) as f:
         f.write(config.encode("utf8"))
@@ -187,7 +193,7 @@ def main(debug, pach_tls_certs, tls_host, tls_email):
     # install JupyterHub
     print_section("installing jupyterhub")
     try:
-        run("helm", "install", "jupyterhub/jupyterhub", "--version=0.8.2", "--generate-name", "--values", config_path)
+        run("helm", "upgrade", "--install", "jhub", "jupyterhub/jupyterhub", "--version=1.0.1dev", "--values", config_path, "--debug")
     finally:
         if not debug:
             os.unlink(config_path)
@@ -227,8 +233,12 @@ if __name__ == "__main__":
             print("failed to read pach TLS certs at '{}': {}".format(args.pach_tls_certs_path, e), file=sys.stderr)
             sys.exit(1)
 
+    # get the version
+    with open("jupyterhub_version.txt", "r") as f:
+        jupyterhub_version = f.read()
+
     try:
-        main(args.debug, pach_tls_certs, args.tls_host, args.tls_email)
+        main(args.debug, pach_tls_certs, args.tls_host, args.tls_email, jupyterhub_version)
     except ApplicationError as e:
         print("error: {}".format(e), file=sys.stderr)
         if args.debug:
