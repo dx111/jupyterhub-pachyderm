@@ -49,7 +49,7 @@ auth:
 
 2) If auth is not enabled on your Pachyderm clsuter, or you don't want to use Pachyderm auth in JupyterHub, you only need to override the singleuser image, like so:
 
-```
+```yaml
 singleuser:
   image:
     name: ysimonson/jupyterhub-pachyderm-user
