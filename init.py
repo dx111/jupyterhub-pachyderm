@@ -104,6 +104,13 @@ def run_version_check(cmd, *args):
     except subprocess.CalledProcessError as e:
         raise ApplicationError("could not check {} version; ensure {} is installed".format(cmd, cmd)) from e
 
+def run_helm(debug, *args, **kwargs):
+    if debug:
+        return run("helm", *args, "--debug", **kwargs)
+    else:
+        return run("helm", *args, **kwargs)
+    
+
 def print_section(section):
     print("===> {}".format(section))
 
@@ -115,8 +122,8 @@ def main(debug, pach_tls_certs, tls_host, tls_email, jupyterhub_version):
     run_version_check("helm", "version")
 
     print_section("configuring helm")
-    run("helm", "repo", "add", "jupyterhub", "https://jupyterhub.github.io/helm-chart/")
-    run("helm", "repo", "update")
+    run_helm(debug, "repo", "add", "jupyterhub", "https://jupyterhub.github.io/helm-chart/")
+    run_helm(debug, "repo", "update")
 
     # parse pach context
     print_section("getting pachyderm context")
@@ -193,7 +200,7 @@ def main(debug, pach_tls_certs, tls_host, tls_email, jupyterhub_version):
     # install JupyterHub
     print_section("installing jupyterhub")
     try:
-        run("helm", "upgrade", "--install", "jhub", "jupyterhub/jupyterhub", "--version=1.0.1dev", "--values", config_path, "--debug")
+        run_helm(debug, "upgrade", "--install", "jhub", "jupyterhub/jupyterhub", "--version={}".format(jupyterhub_version), "--values", config_path, "--debug")
     finally:
         if not debug:
             os.unlink(config_path)
