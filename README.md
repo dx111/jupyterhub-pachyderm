@@ -53,7 +53,7 @@ auth:
 singleuser:
   image:
     name: ysimonson/jupyterhub-pachyderm-user
-    tag: "{jupyterhub_version}"
+    tag: "{jupyterhub chart version}"
 ```
 
 ## Using JupyterHub
