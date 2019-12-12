@@ -1,5 +1,7 @@
+VERSION = $(shell cat ../../jupyterhub_version.txt)
+
 .PHONY: docker-build
 
 docker-build:
-	docker build --tag ysimonson/jupyterhub-pachyderm-hub:0.8.2 .
-	docker push ysimonson/jupyterhub-pachyderm-hub:0.8.2
+	docker build --build-arg VERSION=$(VERSION) --tag ysimonson/jupyterhub-pachyderm-hub:$(VERSION) .
+	docker push ysimonson/jupyterhub-pachyderm-hub:$(VERSION)
