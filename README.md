@@ -5,6 +5,16 @@ This repo contains everything necessary for getting JupyterHub running and well-
 - Seamless authentication with Pachyderm: if auth is enabled on the Pachyderm cluster, you login to JupyterHub with your Pachyderm credentials (if auth is not enabled, a global login is used.)
 - Built-in support for Pachyderm interactivity in Python notebooks via our official Python client library, [python-pachyderm](https://github.com/pachyderm/python-pachyderm/). If auth is enabled on the Pachyderm cluster, client instances will additionally be automatically authenticated to be same as as JupyterHub user.
 
+## Supported Platforms
+
+Tested on these platforms:
+
+* GKE (kubernetes 1.13)
+* EKS (kubernetes 1.13)
+* Docker for mac (kubernetes 1.14)
+
+This is currently known not to work on kubernetes 1.16-based environments (including minikube.)
+
 ## Deploying JupyterHub
 
 ### Prerequisites
