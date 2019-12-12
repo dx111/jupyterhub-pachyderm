@@ -200,7 +200,7 @@ def main(debug, pach_tls_certs, tls_host, tls_email, jupyterhub_version):
     # install JupyterHub
     print_section("installing jupyterhub")
     try:
-        run_helm(debug, "upgrade", "--install", "jhub", "jupyterhub/jupyterhub", "--version={}".format(jupyterhub_version), "--values", config_path, "--debug")
+        run_helm(debug, "upgrade", "--install", "jhub", "jupyterhub/jupyterhub", "--version={}".format(jupyterhub_version), "--values", config_path)
     finally:
         if not debug:
             os.unlink(config_path)
