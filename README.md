@@ -22,49 +22,14 @@ This is currently known not to work on kubernetes 1.16-based environments (inclu
 1) [Deploy pachyderm](https://docs.pachyderm.com/latest/getting_started/local_installation/).
 2) [Install helm 3](https://helm.sh/docs/using_helm/#installing-helm).
 
-### Easy Mode: use `init.py`
+### Install
 
 We provide a helper script (`init.py`) for easing JupyterHub deployments. It sets reasonable defaults for JupyterHub, and has a few options for debugging and configuration (see `./init.py --help` for details.)
 
 1) Run `./init.py`.
 2) If there's a firewall between you and the kubernetes cluster, make sure to punch a hole so you can connect to port 80 on it. [See cloud-specific instructions here.](https://zero-to-jupyterhub.readthedocs.io/en/latest/create-k8s-cluster.html)
 
-### Hard Mode: use helm
-
-If you need to customize your JupyterHub deployment more than what `init.py` offers, follow the [zero to JupyterHub guide](https://zero-to-jupyterhub.readthedocs.io/en/latest/index.html) and install JupyterHub on the same Kubernetes cluster as Pachyderm. You'll need to change some of the values of your Helm `config.yaml` to add Pachyderm integrations
-
-1) If auth is enabled on your Pachyderm cluster and you want to use Pachyderm auth in JupyterHub, ensure `config.yaml` has something like this:
-
-```yaml
-hub:
-  image:
-    name: ysimonson/jupyterhub-pachyderm-hub
-    tag: "0.8.2"
-singleuser:
-  image:
-    name: ysimonson/jupyterhub-pachyderm-user
-    tag: "0.8.2"
-auth:
-  state:
-    enabled: true
-    cryptoKey: "{some random string}"
-  type: custom
-  custom:
-    className: pachyderm_authenticator.PachydermAuthenticator
-    config:
-      pach_auth_token: "{pachyderm admin auth token}"
-      pach_tls_certs: "{pachyderm TLS certificates}"
-      global_password: "{some random string}"
-```
-
-2) If auth is not enabled on your Pachyderm cluster, or you don't want to use Pachyderm auth in JupyterHub, you only need to override the singleuser image, like so:
-
-```yaml
-singleuser:
-  image:
-    name: ysimonson/jupyterhub-pachyderm-user
-    tag: "0.8.2"
-```
+If you need to customize your JupyterHub deployment more than what `init.py` offers, see our [advanced setup guide.](doc/advanced_setup.md)
 
 ## Using JupyterHub
 
@@ -90,6 +55,8 @@ Notice that, without configuration:
 
 1) `python_pachyderm` is already installed.
 2) The username for `who_am_i()` is the same as your JupyterHub login username.
+
+For a more advanced example, see our [opencv walkthrough](doc/opencv.md).
 
 ## Troubleshooting
 
