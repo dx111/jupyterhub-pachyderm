@@ -2,17 +2,15 @@
 
 Now that JupyterHub and Pachyderm are running, we'll walk through the canonical [opencv demo](https://github.com/pachyderm/pachyderm/tree/master/examples/opencv), except we'll do everything from JupyterHub.
 
-In JupyterHub:
+In JupyterHub, create a directory called `edges` and add these files to it:
 
-1) Create a directory called `edges` and add these files to it:
+- A `main.py` with [these contents.](https://github.com/pachyderm/python-pachyderm/blob/master/examples/opencv/edges/main.py) Make sure that it's a python file rather than a notebook.
 
-  - A `main.py` with [these contents.](https://github.com/pachyderm/python-pachyderm/blob/master/examples/opencv/edges/main.py) Make sure that it's a python file rather than a notebook.
-
-  - A `requirements.txt` with [these contents.](https://github.com/pachyderm/python-pachyderm/blob/master/examples/opencv/edges/requirements.txt)
+- A `requirements.txt` with [these contents.](https://github.com/pachyderm/python-pachyderm/blob/master/examples/opencv/edges/requirements.txt)
 
 Together, these files represent the `edges` pipeline that we'll create from JupyterHub.
 
-2) Run this in a notebook:
+Now, run this in a notebook:
 
 ```python3
 
