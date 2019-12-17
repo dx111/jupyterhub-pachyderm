@@ -39,31 +39,31 @@ If you need to customize your JupyterHub deployment more than what `init.py` off
 hub:
   image:
     name: ysimonson/jupyterhub-pachyderm-hub
-    tag: "{jupyterhub chart version}"
+    tag: "0.8.2"
 singleuser:
   image:
     name: ysimonson/jupyterhub-pachyderm-user
-    tag: "{jupyterhub chart version}"
+    tag: "0.8.2"
 auth:
   state:
     enabled: true
-    cryptoKey: "{some random bytes}"
+    cryptoKey: "{some random string}"
   type: custom
   custom:
     className: pachyderm_authenticator.PachydermAuthenticator
     config:
       pach_auth_token: "{pachyderm admin auth token}"
       pach_tls_certs: "{pachyderm TLS certificates}"
-      global_password: "{some random bytes}"
+      global_password: "{some random string}"
 ```
 
-2) If auth is not enabled on your Pachyderm clsuter, or you don't want to use Pachyderm auth in JupyterHub, you only need to override the singleuser image, like so:
+2) If auth is not enabled on your Pachyderm cluster, or you don't want to use Pachyderm auth in JupyterHub, you only need to override the singleuser image, like so:
 
 ```yaml
 singleuser:
   image:
     name: ysimonson/jupyterhub-pachyderm-user
-    tag: "{jupyterhub chart version}"
+    tag: "0.8.2"
 ```
 
 ## Using JupyterHub
