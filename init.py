@@ -133,7 +133,7 @@ def main(debug, pach_tls_certs, tls_host, tls_email, jupyterhub_version):
         pach_context_json = json.loads(pach_context_output)
         pach_cluster = pach_context_json["cluster_name"]
         pach_auth_info = pach_context_json["auth_info"]
-        pach_namespace = pach_context_json["namespace"] or "default"
+        pach_namespace = pach_context_json.get("namespace", "default")
     except Exception as e:
         raise ApplicationError("could not parse pach context info") from e
     if debug:
