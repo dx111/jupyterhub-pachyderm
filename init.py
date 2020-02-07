@@ -18,11 +18,11 @@ BASE_CONFIG = """
 hub:
   image:
     name: pachyderm/jupyterhub-pachyderm-hub
-    tag: "{jupyterhub_version}"
+    tag: "{version}"
 singleuser:
   image:
     name: pachyderm/jupyterhub-pachyderm-user
-    tag: "{jupyterhub_version}"
+    tag: "{version}"
 """
 
 AUTH_BASE_CONFIG = """
@@ -114,7 +114,7 @@ def run_helm(debug, *args, **kwargs):
 def print_section(section):
     print("===> {}".format(section))
 
-def main(debug, pach_tls_certs, tls_host, tls_email, jupyterhub_version):
+def main(debug, pach_tls_certs, tls_host, tls_email, jupyterhub_version, version):
     # print versions, which in the process validates that dependencies are installed
     print_section("checking dependencies are installed")
     run_version_check("kubectl", "version")
@@ -178,7 +178,7 @@ def main(debug, pach_tls_certs, tls_host, tls_email, jupyterhub_version):
     global_password = secrets.token_hex(32)
     secret_token = secrets.token_hex(32)
 
-    config = BASE_CONFIG.format(jupyterhub_version=jupyterhub_version)
+    config = BASE_CONFIG.format(version=version)
 
     config += AUTH_BASE_CONFIG.format(
         auth_state_crypto_key=auth_state_crypto_key,
@@ -241,11 +241,13 @@ if __name__ == "__main__":
             sys.exit(1)
 
     # get the version
-    with open("jupyterhub_version.txt", "r") as f:
-        jupyterhub_version = f.read()
+    with open("version.json", "r") as f:
+        j = json.load(f)
+        jupyterhub_version = j["jupyterhub"]
+        version = j["jupyterhub_pachyderm"]
 
     try:
-        main(args.debug, pach_tls_certs, args.tls_host, args.tls_email, jupyterhub_version)
+        main(args.debug, pach_tls_certs, args.tls_host, args.tls_email, jupyterhub_version, version)
     except ApplicationError as e:
         print("error: {}".format(e), file=sys.stderr)
         if args.debug:
