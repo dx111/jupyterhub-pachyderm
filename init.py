@@ -213,12 +213,6 @@ def main(debug, pach_tls_certs, tls_host, tls_email, jupyterhub_version, version
         if not debug:
             os.unlink(config_path)
 
-    # print notes
-    print_section("notes")
-    print("- The logged in pachctl user ('{}') has been set as the JupyterHub admin".format(admin_user))
-    if debug:
-        print("- Since debug is enabled, the config was not deleted. Because it contains sensitive data that can compromise your JupyterHub cluster, you should delete it. It's located locally at: {}".format(config_path))
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Sets up JupyterHub on a kubernetes cluster that has Pachyderm running on it.")
     parser.add_argument("--debug", default=False, action="store_true", help="Debug mode")
