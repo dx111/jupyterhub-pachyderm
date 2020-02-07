@@ -36,7 +36,6 @@ auth:
     config:
       pach_auth_token: "{pach_auth_token}"
       pach_tls_certs: "{pach_tls_certs}"
-      global_password: "{global_password}"
 """
 
 AUTH_ADMIN_CONFIG = """
@@ -164,10 +163,21 @@ def main(debug, pach_tls_certs, tls_host, tls_email, jupyterhub_version, version
     if pach_namespace != kube_namespace:
         raise ApplicationError("the active pach context's namespace ('{}') is not the same as the current kubernetes context's namespace ('{}')".format(pach_namespace, kube_namespace))
 
-    # generate pach auth token
-    print_section("generating a pach auth token")
+    # verify enterprise is enabled
+    print_section("checking enterprise")
+    enterprise_state_stdout = run("pachctl", "enterprise", "get-state", capture_stdout=True)
+    if not enterprise_state_stdout.startswith("Pachyderm Enterprise token state: ACTIVE"):
+        raise ApplicationError("pachyderm enterprise doesn't seem to be enabled yet")
+
+    # check auth
+    print_section("checking auth")
     admin_user_stdout = run_auth_command("whoami")
-    admin_user = WHO_AM_I_PARSER.match(admin_user_stdout).groups()[0] if admin_user_stdout else None
+    if not admin_user_stdout:
+        raise ApplicationError("you must be logged into pachyderm to deploy JupyterHub")
+    admin_user = WHO_AM_I_PARSER.match(admin_user_stdout).groups()[0]
+
+    # generate pach auth token
+    print_section("generating a pach auth token")    
     pach_auth_token_stdout = run_auth_command("get-auth-token")
     pach_auth_token = AUTH_TOKEN_PARSER.search(pach_auth_token_stdout).groups()[0] if pach_auth_token_stdout else ""
     assert (admin_user and pach_auth_token) or (not admin_user and not pach_auth_token)
@@ -175,7 +185,6 @@ def main(debug, pach_tls_certs, tls_host, tls_email, jupyterhub_version, version
     # generate the config
     print_section("generating config")
     auth_state_crypto_key = secrets.token_hex(32)
-    global_password = secrets.token_hex(32)
     secret_token = secrets.token_hex(32)
 
     config = BASE_CONFIG.format(version=version)
@@ -184,7 +193,6 @@ def main(debug, pach_tls_certs, tls_host, tls_email, jupyterhub_version, version
         auth_state_crypto_key=auth_state_crypto_key,
         pach_auth_token=pach_auth_token,
         pach_tls_certs=pach_tls_certs,
-        global_password=global_password,
     )
     if admin_user:
         config += AUTH_ADMIN_CONFIG.format(admin_user=admin_user)
@@ -207,10 +215,7 @@ def main(debug, pach_tls_certs, tls_host, tls_email, jupyterhub_version, version
 
     # print notes
     print_section("notes")
-    if not admin_user:
-        print("- Since Pachyderm auth doesn't appear to be enabled, JupyterHub will expect the following global password for users: {}".format(global_password))
-    else:
-        print("- Since Pachyderm auth is enabled, the logged in pachctl user ('{}') has been set as the JupyterHub admin".format(admin_user))
+    print("- The logged in pachctl user ('{}') has been set as the JupyterHub admin".format(admin_user))
     if debug:
         print("- Since debug is enabled, the config was not deleted. Because it contains sensitive data that can compromise your JupyterHub cluster, you should delete it. It's located locally at: {}".format(config_path))
 

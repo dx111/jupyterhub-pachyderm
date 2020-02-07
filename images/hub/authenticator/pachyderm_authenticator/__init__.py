@@ -37,13 +37,6 @@ class PachydermAuthenticator(Authenticator):
         help="Pachyderm root certs. Leave blank if Pachyderm TLS is not enabled, or if system certs should be used."
     )
 
-    # The global password used if Pachyderm auth is not enabled
-    global_password = Unicode(
-        "",
-        config=True,
-        help="If Pachyderm auth is not enabled, this global password will be used for all logins."
-    )
-
     def pachyderm_client(self, auth_token):
         """Creates a new Pachyderm client"""
         return python_pachyderm.Client.new_in_cluster(
@@ -104,12 +97,8 @@ class PachydermAuthenticator(Authenticator):
     def authenticate(self, handler, data):
         client = self.pachyderm_client(self.pach_auth_token or None)
         auth_activated = self.is_pachyderm_auth_enabled(client)
-        if auth_activated is None:
+        if not auth_activated:
             # auth check failed due to misconfiguration - bail
-            return
-        elif auth_activated is False:
-            if data["password"] == self.global_password:
-                return data["username"]
             return
 
         try:
