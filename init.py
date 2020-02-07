@@ -17,11 +17,11 @@ WHO_AM_I_PARSER = re.compile(r"You are \"(.+)\"")
 BASE_CONFIG = """
 hub:
   image:
-    name: ysimonson/jupyterhub-pachyderm-hub
+    name: pachyderm/jupyterhub-pachyderm-hub
     tag: "{jupyterhub_version}"
 singleuser:
   image:
-    name: ysimonson/jupyterhub-pachyderm-user
+    name: pachyderm/jupyterhub-pachyderm-user
     tag: "{jupyterhub_version}"
 """
 
