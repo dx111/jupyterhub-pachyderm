@@ -1,0 +1,5 @@
+{
+    "pachyderm": "1.9.12",
+    "jupyterhub": "0.8.2",
+    "jupyterhub_pachyderm": "1.0.0"
+}

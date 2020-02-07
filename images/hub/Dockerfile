@@ -1,5 +1,5 @@
-ARG VERSION
-FROM jupyterhub/k8s-hub:$VERSION
+ARG JUPYTERHUB_VERSION
+FROM jupyterhub/k8s-hub:$JUPYTERHUB_VERSION
 
 USER root
 COPY authenticator /tmp/authenticator
