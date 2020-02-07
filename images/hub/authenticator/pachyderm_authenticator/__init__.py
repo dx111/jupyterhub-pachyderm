@@ -11,6 +11,16 @@ MISCONFIGURATION_HTML = """
 <div>In most cases, manually reconfiguring or redeploying JupyterHub fixes the issue.</div>
 """
 
+ENTERPRISE_DISABLED_HTML = """
+<h1>Enterprise disabled</h1>
+<div>Please activate pachyderm enterprise before using jupyterhub-pachyderm.</div>
+"""
+
+ENTERPRISE_EXPIRED_HTML = """
+<h1>Enterprise expired</h1>
+<div>Your enterprise license is expired. Please re-activate before using jupyterhub-pachyderm.</div>
+"""
+
 class PachydermAuthenticator(Authenticator):
     # The Pachyderm auth token used for check if auth is enabled and
     # authenticating credentials
@@ -67,8 +77,17 @@ class PachydermAuthenticator(Authenticator):
     @property
     def custom_html(self):
         client = self.pachyderm_client(self.pach_auth_token or None)
-        auth_activated = self.is_pachyderm_auth_enabled(client)
 
+        # Check enterprise state
+        enterprise_state = client.get_enterprise_state().state
+        if enterprise_state is python_pachyderm.State.NONE:
+            return ENTERPRISE_DISABLED_HTML
+        elif enterprise_state is python_pachyderm.State.EXPIRED:
+            return ENTERPRISE_EXPIRED_HTML
+        elif enterprise_state is not python_pachyderm.State.ACTIVE:
+            return MISCONFIGURATION_HTML
+
+        auth_activated = self.is_pachyderm_auth_enabled(client)
         if auth_activated is None:
             # Generate custom HTML to show on the login page if there's a
             # misconfiguration
