@@ -128,15 +128,15 @@ class PachydermAuthenticator(Authenticator):
             return
 
         token = auth_state["token"]
-        if not token.startswith("otp/"):
-            spawner.environment.update({
-                "PACH_PYTHON_AUTH_TOKEN": token,
-            })
 
-            spawner.lifecycle_hooks = {
-                "postStart": {
-                    "exec": {
-                        "command": ["/app/config.sh", token]
-                    }
+        spawner.environment.update({
+            "PACH_PYTHON_AUTH_TOKEN": token,
+        })
+
+        spawner.lifecycle_hooks = {
+            "postStart": {
+                "exec": {
+                    "command": ["/app/config.sh", token]
                 }
             }
+        }
