@@ -1,3 +1,5 @@
+import base64
+
 from traitlets import Unicode
 from jupyterhub.auth import Authenticator
 
@@ -39,9 +41,10 @@ class PachydermAuthenticator(Authenticator):
 
     def pachyderm_client(self, auth_token):
         """Creates a new Pachyderm client"""
+
         return python_pachyderm.Client.new_in_cluster(
             auth_token=auth_token,
-            root_certs=self.pach_tls_certs or None,
+            root_certs=base64.b64decode(self.pach_tls_certs) if self.pach_tls_certs else None,
         )
 
     def is_pachyderm_auth_enabled(self, client):
