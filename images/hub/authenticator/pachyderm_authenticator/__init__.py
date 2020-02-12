@@ -1,3 +1,5 @@
+import base64
+
 from traitlets import Unicode
 from jupyterhub.auth import Authenticator
 
@@ -9,6 +11,16 @@ MISCONFIGURATION_HTML = """
 <div>There is a misconfiguration with your JupyterHub deployment.</div>
 <div>See the logs for the hub pod for details.</div>
 <div>In most cases, manually reconfiguring or redeploying JupyterHub fixes the issue.</div>
+"""
+
+ENTERPRISE_DISABLED_HTML = """
+<h1>Enterprise disabled</h1>
+<div>Please activate pachyderm enterprise before using jupyterhub-pachyderm.</div>
+"""
+
+ENTERPRISE_EXPIRED_HTML = """
+<h1>Enterprise expired</h1>
+<div>Your enterprise license is expired. Please re-activate before using jupyterhub-pachyderm.</div>
 """
 
 class PachydermAuthenticator(Authenticator):
@@ -27,18 +39,12 @@ class PachydermAuthenticator(Authenticator):
         help="Pachyderm root certs. Leave blank if Pachyderm TLS is not enabled, or if system certs should be used."
     )
 
-    # The global password used if Pachyderm auth is not enabled
-    global_password = Unicode(
-        "",
-        config=True,
-        help="If Pachyderm auth is not enabled, this global password will be used for all logins."
-    )
-
     def pachyderm_client(self, auth_token):
         """Creates a new Pachyderm client"""
+
         return python_pachyderm.Client.new_in_cluster(
             auth_token=auth_token,
-            root_certs=self.pach_tls_certs or None,
+            root_certs=base64.b64decode(self.pach_tls_certs) if self.pach_tls_certs else None,
         )
 
     def is_pachyderm_auth_enabled(self, client):
@@ -67,8 +73,17 @@ class PachydermAuthenticator(Authenticator):
     @property
     def custom_html(self):
         client = self.pachyderm_client(self.pach_auth_token or None)
-        auth_activated = self.is_pachyderm_auth_enabled(client)
 
+        # Check enterprise state
+        enterprise_state = client.get_enterprise_state().state
+        if enterprise_state is python_pachyderm.State.NONE:
+            return ENTERPRISE_DISABLED_HTML
+        elif enterprise_state is python_pachyderm.State.EXPIRED:
+            return ENTERPRISE_EXPIRED_HTML
+        elif enterprise_state is not python_pachyderm.State.ACTIVE:
+            return MISCONFIGURATION_HTML
+
+        auth_activated = self.is_pachyderm_auth_enabled(client)
         if auth_activated is None:
             # Generate custom HTML to show on the login page if there's a
             # misconfiguration
@@ -85,12 +100,8 @@ class PachydermAuthenticator(Authenticator):
     def authenticate(self, handler, data):
         client = self.pachyderm_client(self.pach_auth_token or None)
         auth_activated = self.is_pachyderm_auth_enabled(client)
-        if auth_activated is None:
+        if not auth_activated:
             # auth check failed due to misconfiguration - bail
-            return
-        elif auth_activated is False:
-            if data["password"] == self.global_password:
-                return data["username"]
             return
 
         try:
@@ -119,8 +130,16 @@ class PachydermAuthenticator(Authenticator):
         if not auth_state:
             return
 
-        token = auth_state.get("token")
-        if token:
-            spawner.environment.update({
-                "PACH_PYTHON_AUTH_TOKEN": token,
-            })
+        token = auth_state["token"]
+
+        spawner.environment.update({
+            "PACH_PYTHON_AUTH_TOKEN": token,
+        })
+
+        spawner.lifecycle_hooks = {
+            "postStart": {
+                "exec": {
+                    "command": ["/app/config.sh", token]
+                }
+            }
+        }

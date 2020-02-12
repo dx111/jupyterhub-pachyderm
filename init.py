@@ -4,6 +4,7 @@ import os
 import re
 import sys
 import json
+import base64
 import secrets
 import argparse
 import tempfile
@@ -17,12 +18,12 @@ WHO_AM_I_PARSER = re.compile(r"You are \"(.+)\"")
 BASE_CONFIG = """
 hub:
   image:
-    name: ysimonson/jupyterhub-pachyderm-hub
-    tag: "{jupyterhub_version}"
+    name: pachyderm/jupyterhub-pachyderm-hub
+    tag: "{version}"
 singleuser:
   image:
-    name: ysimonson/jupyterhub-pachyderm-user
-    tag: "{jupyterhub_version}"
+    name: pachyderm/jupyterhub-pachyderm-user
+    tag: "{version}"
 """
 
 AUTH_BASE_CONFIG = """
@@ -36,7 +37,6 @@ auth:
     config:
       pach_auth_token: "{pach_auth_token}"
       pach_tls_certs: "{pach_tls_certs}"
-      global_password: "{global_password}"
 """
 
 AUTH_ADMIN_CONFIG = """
@@ -114,7 +114,7 @@ def run_helm(debug, *args, **kwargs):
 def print_section(section):
     print("===> {}".format(section))
 
-def main(debug, pach_tls_certs, tls_host, tls_email, jupyterhub_version):
+def main(debug, pach_tls_certs, tls_host, tls_email, jupyterhub_version, version):
     # print versions, which in the process validates that dependencies are installed
     print_section("checking dependencies are installed")
     run_version_check("kubectl", "version")
@@ -164,10 +164,21 @@ def main(debug, pach_tls_certs, tls_host, tls_email, jupyterhub_version):
     if pach_namespace != kube_namespace:
         raise ApplicationError("the active pach context's namespace ('{}') is not the same as the current kubernetes context's namespace ('{}')".format(pach_namespace, kube_namespace))
 
-    # generate pach auth token
-    print_section("generating a pach auth token")
+    # verify enterprise is enabled
+    print_section("checking enterprise")
+    enterprise_state_stdout = run("pachctl", "enterprise", "get-state", capture_stdout=True)
+    if not enterprise_state_stdout.startswith("Pachyderm Enterprise token state: ACTIVE"):
+        raise ApplicationError("pachyderm enterprise doesn't seem to be enabled yet")
+
+    # check auth
+    print_section("checking auth")
     admin_user_stdout = run_auth_command("whoami")
-    admin_user = WHO_AM_I_PARSER.match(admin_user_stdout).groups()[0] if admin_user_stdout else None
+    if not admin_user_stdout:
+        raise ApplicationError("you must be logged into pachyderm to deploy JupyterHub")
+    admin_user = WHO_AM_I_PARSER.match(admin_user_stdout).groups()[0]
+
+    # generate pach auth token
+    print_section("generating a pach auth token")    
     pach_auth_token_stdout = run_auth_command("get-auth-token")
     pach_auth_token = AUTH_TOKEN_PARSER.search(pach_auth_token_stdout).groups()[0] if pach_auth_token_stdout else ""
     assert (admin_user and pach_auth_token) or (not admin_user and not pach_auth_token)
@@ -175,16 +186,14 @@ def main(debug, pach_tls_certs, tls_host, tls_email, jupyterhub_version):
     # generate the config
     print_section("generating config")
     auth_state_crypto_key = secrets.token_hex(32)
-    global_password = secrets.token_hex(32)
     secret_token = secrets.token_hex(32)
 
-    config = BASE_CONFIG.format(jupyterhub_version=jupyterhub_version)
+    config = BASE_CONFIG.format(version=version)
 
     config += AUTH_BASE_CONFIG.format(
         auth_state_crypto_key=auth_state_crypto_key,
         pach_auth_token=pach_auth_token,
-        pach_tls_certs=pach_tls_certs,
-        global_password=global_password,
+        pach_tls_certs=base64.b64encode(pach_tls_certs).decode("utf8"),
     )
     if admin_user:
         config += AUTH_ADMIN_CONFIG.format(admin_user=admin_user)
@@ -205,15 +214,6 @@ def main(debug, pach_tls_certs, tls_host, tls_email, jupyterhub_version):
         if not debug:
             os.unlink(config_path)
 
-    # print notes
-    print_section("notes")
-    if not admin_user:
-        print("- Since Pachyderm auth doesn't appear to be enabled, JupyterHub will expect the following global password for users: {}".format(global_password))
-    else:
-        print("- Since Pachyderm auth is enabled, the logged in pachctl user ('{}') has been set as the JupyterHub admin".format(admin_user))
-    if debug:
-        print("- Since debug is enabled, the config was not deleted. Because it contains sensitive data that can compromise your JupyterHub cluster, you should delete it. It's located locally at: {}".format(config_path))
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Sets up JupyterHub on a kubernetes cluster that has Pachyderm running on it.")
     parser.add_argument("--debug", default=False, action="store_true", help="Debug mode")
@@ -231,21 +231,23 @@ if __name__ == "__main__":
         sys.exit(1)
 
     # get pach tls certs
-    pach_tls_certs = ""
+    pach_tls_certs = b""
     if args.pach_tls_certs_path != "":
         try:
-            with open(args.pach_tls_certs_path, "r") as f:
+            with open(args.pach_tls_certs_path, "rb") as f:
                 pach_tls_certs = f.read()
         except Exception as e:
             print("failed to read pach TLS certs at '{}': {}".format(args.pach_tls_certs_path, e), file=sys.stderr)
             sys.exit(1)
 
     # get the version
-    with open("jupyterhub_version.txt", "r") as f:
-        jupyterhub_version = f.read()
+    with open("version.json", "r") as f:
+        j = json.load(f)
+        jupyterhub_version = j["jupyterhub"]
+        version = j["jupyterhub_pachyderm"]
 
     try:
-        main(args.debug, pach_tls_certs, args.tls_host, args.tls_email, jupyterhub_version)
+        main(args.debug, pach_tls_certs, args.tls_host, args.tls_email, jupyterhub_version, version)
     except ApplicationError as e:
         print("error: {}".format(e), file=sys.stderr)
         if args.debug:

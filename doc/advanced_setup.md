@@ -9,11 +9,11 @@ If auth is enabled on your Pachyderm cluster and you want to use Pachyderm auth 
 ```yaml
 hub:
   image:
-    name: ysimonson/jupyterhub-pachyderm-hub
+    name: pachyderm/jupyterhub-pachyderm-hub
     tag: "0.8.2"
 singleuser:
   image:
-    name: ysimonson/jupyterhub-pachyderm-user
+    name: pachyderm/jupyterhub-pachyderm-user
     tag: "0.8.2"
 auth:
   state:
@@ -35,6 +35,6 @@ If auth is not enabled on your Pachyderm cluster, or you don't want to use Pachy
 ```yaml
 singleuser:
   image:
-    name: ysimonson/jupyterhub-pachyderm-user
+    name: pachyderm/jupyterhub-pachyderm-user
     tag: "0.8.2"
 ```
