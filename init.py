@@ -4,7 +4,6 @@ import os
 import re
 import sys
 import json
-import base64
 import secrets
 import argparse
 import tempfile
@@ -36,7 +35,6 @@ auth:
     className: pachyderm_authenticator.PachydermAuthenticator
     config:
       pach_auth_token: "{pach_auth_token}"
-      pach_tls_certs: "{pach_tls_certs}"
 """
 
 AUTH_ADMIN_CONFIG = """
@@ -114,7 +112,7 @@ def run_helm(debug, *args, **kwargs):
 def print_section(section):
     print("===> {}".format(section))
 
-def main(debug, pach_tls_certs, tls_host, tls_email, jupyterhub_version, version):
+def main(debug, tls_host, tls_email, jupyterhub_version, version):
     # print versions, which in the process validates that dependencies are installed
     print_section("checking dependencies are installed")
     run_version_check("kubectl", "version")
@@ -193,7 +191,6 @@ def main(debug, pach_tls_certs, tls_host, tls_email, jupyterhub_version, version
     config += AUTH_BASE_CONFIG.format(
         auth_state_crypto_key=auth_state_crypto_key,
         pach_auth_token=pach_auth_token,
-        pach_tls_certs=base64.b64encode(pach_tls_certs).decode("utf8"),
     )
     if admin_user:
         config += AUTH_ADMIN_CONFIG.format(admin_user=admin_user)
@@ -230,16 +227,6 @@ if __name__ == "__main__":
         print("TLS email specified, but no host", file=sys.stderr)
         sys.exit(1)
 
-    # get pach tls certs
-    pach_tls_certs = b""
-    if args.pach_tls_certs_path != "":
-        try:
-            with open(args.pach_tls_certs_path, "rb") as f:
-                pach_tls_certs = f.read()
-        except Exception as e:
-            print("failed to read pach TLS certs at '{}': {}".format(args.pach_tls_certs_path, e), file=sys.stderr)
-            sys.exit(1)
-
     # get the version
     with open("version.json", "r") as f:
         j = json.load(f)
@@ -247,7 +234,7 @@ if __name__ == "__main__":
         version = j["jupyterhub_pachyderm"]
 
     try:
-        main(args.debug, pach_tls_certs, args.tls_host, args.tls_email, jupyterhub_version, version)
+        main(args.debug, args.tls_host, args.tls_email, jupyterhub_version, version)
     except ApplicationError as e:
         print("error: {}".format(e), file=sys.stderr)
         if args.debug:
