@@ -10,4 +10,4 @@ ADD config.sh /app/config.sh
 RUN chmod +x /app/config.sh
 
 USER $NB_UID
-RUN pip install git+https://github.com/pachyderm/python-pachyderm.git@use-pachd-peer-service
+RUN pip install python-pachyderm
