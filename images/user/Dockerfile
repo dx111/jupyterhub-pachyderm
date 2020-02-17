@@ -10,4 +10,4 @@ ADD config.sh /app/config.sh
 RUN chmod +x /app/config.sh
 
 USER $NB_UID
-RUN pip install --no-cache-dir python-pachyderm
+RUN pip install python-pachyderm
