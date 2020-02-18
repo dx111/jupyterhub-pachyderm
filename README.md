@@ -2,11 +2,11 @@
 
 This repo contains everything necessary for getting JupyterHub running and well-integrated with [Pachyderm](https://github.com/pachyderm/pachyderm). With this, you can get JupyterHub running on the same Kubernetes cluster as Pachyderm, as well as:
 
-- Seamless authentication with Pachyderm: you login to JupyterHub with your Pachyderm credentials.
-- Built-in support for Pachyderm interactivity in Python notebooks via our official Python client library, [python-pachyderm](https://github.com/pachyderm/python-pachyderm/).
+- Seamless authentication with Pachyderm: you can use your Pachyderm credentials to log in to JupyterHub.
+- Built-in support for Pachyderm interactivity in Python notebooks through our official Python client library - [python-pachyderm](https://github.com/pachyderm/python-pachyderm/).
 - Built-in support for `pachctl`, available in the JupyterHub terminal.
 
-Note that this is an Pachyderm enterprise-only feature, and will not work otherwise.
+**Note** This is a Pachyderm Enterprise feature. Contact sales@pachyderm.com for more information.
 
 ## Supported Platforms
 
@@ -41,7 +41,7 @@ Once deployed, navigate to your JupyterHub instance:
 - By default, it should be reachable on port 80 of your cluster's hostname.
 - On minikube, navigate to one of the URLs printed out when you run `minikube service proxy-public --url`.
 
-You should reach a login page; if you don't, see the troubleshooting section below. Now login by using your pachyderm github or OTP auth token for your password. Your JupyterHub username will be the same as your Pachyderm username.
+You should see a login page. If you do not see the login page, read the troubleshooting section below. Log in by using your Pachyderm GitHub or OTP auth token for your password. Your JupyterHub username will be the same as your Pachyderm username.
 
 Once you're logged in, you should be able to connect to the Pachyderm cluster from within a JupyterHub notebook; e.g., if Pachyderm auth is enabled, try this:
 
