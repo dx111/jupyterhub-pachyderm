@@ -112,7 +112,7 @@ def run_helm(debug, *args, **kwargs):
 def print_section(section):
     print("===> {}".format(section))
 
-def main(debug, tls_host, tls_email, jupyterhub_version, version):
+def main(debug, dry_run, tls_host, tls_email, jupyterhub_version, version):
     # print versions, which in the process validates that dependencies are installed
     print_section("checking dependencies are installed")
     run_version_check("kubectl", "version")
@@ -198,22 +198,27 @@ def main(debug, tls_host, tls_email, jupyterhub_version, version):
     if tls_host:
         config += PROXY_TLS_CONFIG.format(tls_host=tls_host, tls_email=tls_email)
 
-    with tempfile.NamedTemporaryFile(delete=False) as f:
-        f.write(config.encode("utf8"))
-        f.close()
-        config_path = f.name
+    if dry_run:
+        print_section("config")
+        print(config)
+    else:
+        with tempfile.NamedTemporaryFile(delete=False) as f:
+            f.write(config.encode("utf8"))
+            f.close()
+            config_path = f.name
 
-    # install JupyterHub
-    print_section("installing jupyterhub")
-    try:
-        run_helm(debug, "upgrade", "--install", "jhub", "jupyterhub/jupyterhub", "--version={}".format(jupyterhub_version), "--values", config_path)
-    finally:
-        if not debug:
-            os.unlink(config_path)
+        # install JupyterHub
+        print_section("installing jupyterhub")
+        try:
+            run_helm(debug, "upgrade", "--install", "jhub", "jupyterhub/jupyterhub", "--version={}".format(jupyterhub_version), "--values", config_path)
+        finally:
+            if not debug:
+                os.unlink(config_path)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Sets up JupyterHub on a kubernetes cluster that has Pachyderm running on it.")
     parser.add_argument("--debug", default=False, action="store_true", help="Debug mode")
+    parser.add_argument("--dry-run", default=False, action="store_true", help="Print out the Helm config rather than running the command.")
     parser.add_argument("--tls-host", default="", help="If set, TLS is enabled on JupyterHub via Let's Encrypt. The value is a hostname associated with the TLS certificate.")
     parser.add_argument("--tls-email", default="", help="If set, TLS is enabled on JupyterHub via Let's Encrypt. The value is an email address associated with the TLS certificate.")
     args = parser.parse_args()
@@ -233,7 +238,7 @@ if __name__ == "__main__":
         version = j["jupyterhub_pachyderm"]
 
     try:
-        main(args.debug, args.tls_host, args.tls_email, jupyterhub_version, version)
+        main(args.debug, args.dry_run, args.tls_host, args.tls_email, jupyterhub_version, version)
     except ApplicationError as e:
         print("error: {}".format(e), file=sys.stderr)
         if args.debug:
