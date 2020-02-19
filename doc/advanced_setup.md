@@ -1,6 +1,6 @@
 # Advanced Setup Guide
 
-If `init.py` doesn't offer the level customization you need for your JupyterHub deployment, manually install it by following the [zero to JupyterHub guide](https://zero-to-jupyterhub.readthedocs.io/en/latest/index.html). It should be installed on the same cluster as Pachyderm. 
+If `init.py` does not offer the level customization you need for your JupyterHub deployment, you can manually install it by following the [zero to JupyterHub guide](https://zero-to-jupyterhub.readthedocs.io/en/latest/index.html). It should be installed on the same cluster as Pachyderm. 
 
 Create a Helm `config.yaml` by running `./init.py --dry-run`, it should output something like this:
 
