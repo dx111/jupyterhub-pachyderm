@@ -1,0 +1,68 @@
+{
+  "name": "jupyterlab_pachyderm-jupyterlab-extension",
+  "version": "0.1.0",
+  "description": "A JupyterLab extension for Pachyderm.",
+  "keywords": [
+    "jupyter",
+    "jupyterlab",
+    "jupyterlab-extension"
+  ],
+  "homepage": "https://github.com/pachyderm/pachyderm",
+  "bugs": {
+    "url": "https://github.com/pachyderm/pachyderm/issues"
+  },
+  "license": "BSD-3-Clause",
+  "author": "Yusuf Simonson",
+  "files": [
+    "lib/**/*.{d.ts,eot,gif,html,jpg,js,js.map,json,png,svg,woff2,ttf}",
+    "style/**/*.{css,eot,gif,html,jpg,json,png,svg,woff2,ttf}"
+  ],
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "style": "style/index.css",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pachyderm/pachyderm.git"
+  },
+  "scripts": {
+    "build": "jlpm run build:lib",
+    "build:labextension": "cd pachyderm-jupyterlab-extension && rimraf labextension && mkdirp labextension && cd labextension && npm pack ../..",
+    "build:lib": "tsc",
+    "build:all": "jlpm run build:labextension",
+    "clean": "jlpm run clean:lib",
+    "clean:lib": "rimraf lib tsconfig.tsbuildinfo",
+    "clean:labextension": "rimraf pachyderm-jupyterlab-extension/labextension",
+    "clean:all": "jlpm run clean:lib && jlpm run clean:labextension",
+    "prepare": "jlpm run clean && jlpm run build",
+    "watch": "tsc -w"
+  },
+  "dependencies": {
+    "@jupyterlab/application": "^2.0.0",
+    "@jupyterlab/coreutils": "^4.0.0",
+    "@jupyterlab/services": "^5.0.0",
+    "@jupyterlab/mainmenu": "^2.0.0",
+    "@lumino/widgets": "^1.9.3",
+    "react": "~16.9.0"
+  },
+  "devDependencies": {
+    "mkdirp": "^0.5.1",
+    "rimraf": "^2.6.1",
+    "typescript": "~3.7.0"
+  },
+  "sideEffects": [
+    "style/*.css"
+  ],
+  "jupyterlab": {    
+    "discovery": {
+        "server": {
+          "managers": [
+            "pip"
+          ],
+          "base": {
+            "name": "pachyderm-jupyterlab-extension"
+          }
+        }
+      },
+    "extension": true
+  }
+}
