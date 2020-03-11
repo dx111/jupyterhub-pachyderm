@@ -39,9 +39,11 @@
   "dependencies": {
     "@jupyterlab/application": "^2.0.0",
     "@jupyterlab/coreutils": "^4.0.0",
-    "@jupyterlab/services": "^5.0.0",
     "@jupyterlab/mainmenu": "^2.0.0",
+    "@jupyterlab/services": "^5.0.0",
     "@lumino/widgets": "^1.9.3",
+    "d3": "^5.15.0",
+    "d3-dag": "^0.3.4",
     "react": "~16.9.0"
   },
   "devDependencies": {
@@ -52,17 +54,17 @@
   "sideEffects": [
     "style/*.css"
   ],
-  "jupyterlab": {    
+  "jupyterlab": {
     "discovery": {
-        "server": {
-          "managers": [
-            "pip"
-          ],
-          "base": {
-            "name": "pachyderm-jupyterlab-extension"
-          }
+      "server": {
+        "managers": [
+          "pip"
+        ],
+        "base": {
+          "name": "pachyderm-jupyterlab-extension"
         }
-      },
+      }
+    },
     "extension": true
   }
 }

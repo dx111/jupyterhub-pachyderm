@@ -5,7 +5,9 @@ import { IMainMenu } from '@jupyterlab/mainmenu';
 import { Menu } from '@lumino/widgets';
 import { ICommandPalette } from '@jupyterlab/apputils';
 
-import { requestAPI } from './pachyderm-jupyterlab-extension';
+import { DAGWidget } from './dag';
+
+// import { requestAPI } from './pachyderm-jupyterlab-extension';
 
 /**
  * Initialization data for the pachyderm-jupyterlab-extension extension.
@@ -24,16 +26,19 @@ const extension: JupyterFrontEndPlugin<void> = {
     commands.addCommand(command, {
       label: 'DAG viewer',
       caption: 'Execute pachyderm:dag-viewer Command',
-      execute: (args: any) => {
-        requestAPI<any>('get_example')
-          .then(data => {
-            console.log(data);
-          })
-          .catch(reason => {
-            console.error(
-              `The pachyderm-jupyterlab-extension server extension appears to be missing.\n${reason}`
-            );
-          });
+      execute: (args) => {
+        const widget = new DAGWidget();
+        app.shell.add(widget, 'main');
+
+        // requestAPI<any>('get_example')
+        //   .then(data => {
+        //     console.log(data);
+        //   })
+        //   .catch(reason => {
+        //     console.error(
+        //       `The pachyderm-jupyterlab-extension server extension appears to be missing.\n${reason}`
+        //     );
+        //   });
       }
     });
 
