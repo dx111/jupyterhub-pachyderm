@@ -96,14 +96,8 @@ const dag = dagProcessor([
   }
 ]);
 
-const renderGraph = (parentElem: HTMLElement) => {
-  const width = 800;
-  const height = 600;
-
-  const svgNode = d3.select(parentElem)
-    .append("svg")
-    .attr("width", width)
-    .attr("height", height)
+const renderGraph = (svgNode, width, height) => {
+   svgNode
     .attr("viewbox", [-nodeRadius, -nodeRadius, width + 2 * nodeRadius, height + 2 * nodeRadius].join(" "))
 
   const defs = svgNode.append('defs'); // For gradients
@@ -205,6 +199,17 @@ export class DAGWidget extends Widget {
     this.id = 'pachyderm-dag-widget';
     this.title.label = 'Pachyderm DAG';
     this.title.closable = true;
-    renderGraph(this.node)
+
+    const svgNode = d3.select(this.node)
+      .append("svg")
+      .attr("width", "100%")
+      .attr("height", "100%");
+
+    // wait until this.node has been sized before rendering the graph
+    // TODO: maybe we should use a MutationObserver here to handle resizes
+    setTimeout(() => {
+      const rect = this.node.getBoundingClientRect();
+      renderGraph(svgNode, rect.width, rect.height);
+    }, 0);
   }
 }
