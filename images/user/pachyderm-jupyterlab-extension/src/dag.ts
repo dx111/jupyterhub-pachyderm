@@ -1,104 +1,17 @@
 import { Widget } from '@lumino/widgets';
 import * as d3 from 'd3';
 import * as d3Dag from 'd3-dag';
+import { requestAPI } from './api';
 
 const nodeRadius = 20;
 
 const dagProcessor = d3Dag.dagStratify();
-const dag = dagProcessor([
-  {
-    "id": "0",
-    "parentIds": ["8"]
-  },
-  {
-    "id": "1",
-    "parentIds": []
-  },
-  {
-    "id": "2",
-    "parentIds": []
-  },
-  {
-    "id": "3",
-    "parentIds": ["11"]
-  },
-  {
-    "id": "4",
-    "parentIds": ["12"]
-  },
-  {
-    "id": "5",
-    "parentIds": ["18"]
-  },
-  {
-    "id": "6",
-    "parentIds": ["9", "15", "17"]
-  },
-  {
-    "id": "7",
-    "parentIds": ["3", "17", "20", "21"]
-  },
-  {
-    "id": "8",
-    "parentIds": []
-  },
-  {
-    "id": "9",
-    "parentIds": ["4"]
-  },
-  {
-    "id": "10",
-    "parentIds": ["16", "21"]
-  },
-  {
-    "id": "11",
-    "parentIds": ["2"]
-  },
-  {
-    "id": "12",
-    "parentIds": ["21"]
-  },
-  {
-    "id": "13",
-    "parentIds": ["4", "12"]
-  },
-  {
-    "id": "14",
-    "parentIds": ["1", "8"]
-  },
-  {
-    "id": "15",
-    "parentIds": []
-  },
-  {
-    "id": "16",
-    "parentIds": ["0"]
-  },
-  {
-    "id": "17",
-    "parentIds": ["19"]
-  },
-  {
-    "id": "18",
-    "parentIds": ["9"]
-  },
-  {
-    "id": "19",
-    "parentIds": []
-  },
-  {
-    "id": "20",
-    "parentIds": ["13"]
-  },
-  {
-    "id": "21",
-    "parentIds": []
-  }
-]);
 
-const renderGraph = (svgNode, width, height) => {
-   svgNode
+const renderGraph = (svgNode, width, height, data) => {
+  svgNode
     .attr("viewbox", [-nodeRadius, -nodeRadius, width + 2 * nodeRadius, height + 2 * nodeRadius].join(" "))
+
+  const dag = dagProcessor(data);
 
   const defs = svgNode.append('defs'); // For gradients
   
@@ -165,13 +78,12 @@ const renderGraph = (svgNode, width, height) => {
     .enter()
     .append('path')
     .attr('d', arrow)
-    .attr('transform', ({
-      source,
-      target,
-      data
-    }) => {
+    .attr('transform', ({ source, target, data }) => {
       const [end, start] = data.points.reverse();
-      // This sets the arrows the node radius (20) + a little bit (3) away from the node center, on the last line segment of the edge. This means that edges that only span ine level will work perfectly, but if the edge bends, this will be a little off.
+      // This sets the arrows the node radius (20) + a little bit (3) away
+      // from the node center, on the last line segment of the edge. This
+      // means that edges that only span ine level will work perfectly, but if
+      // the edge bends, this will be a little off.
       const dx = start.x - end.x;
       const dy = start.y - end.y;
       const scale = nodeRadius * 1.15 / Math.sqrt(dx * dx + dy * dy);
@@ -179,7 +91,7 @@ const renderGraph = (svgNode, width, height) => {
       const angle = Math.atan2(-dy, -dx) * 180 / Math.PI + 90;
       return `translate(${end.x + dx * scale}, ${end.y + dy * scale}) rotate(${angle})`;
     })
-    .attr('fill', ({target}) => colorMap[target.id])
+    .attr('fill', ({ target }) => colorMap[target.id])
     .attr('stroke', 'white')
     .attr('stroke-width', 1.5);
 
@@ -205,11 +117,16 @@ export class DAGWidget extends Widget {
       .attr("width", "100%")
       .attr("height", "100%");
 
-    // wait until this.node has been sized before rendering the graph
-    // TODO: maybe we should use a MutationObserver here to handle resizes
-    setTimeout(() => {
-      const rect = this.node.getBoundingClientRect();
-      renderGraph(svgNode, rect.width, rect.height);
-    }, 0);
+     // TODO: maybe we should use a MutationObserver here to handle resizes
+    requestAPI<any>('dag')
+      .then(data => {
+        const rect = this.node.getBoundingClientRect();
+        renderGraph(svgNode, rect.width, rect.height, data);
+      })
+      .catch(reason => {
+        console.error(
+          `The pachyderm-jupyterlab-extension server extension appears to be missing.\n${reason}`
+        );
+      });
   }
 }
