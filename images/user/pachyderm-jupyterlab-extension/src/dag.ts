@@ -8,8 +8,10 @@ const nodeRadius = 20;
 const dagProcessor = d3Dag.dagStratify();
 
 const renderGraph = (svgNode, width, height, data) => {
-  svgNode
-    .attr("viewbox", [-nodeRadius, -nodeRadius, width + 2 * nodeRadius, height + 2 * nodeRadius].join(" "))
+  console.log(data);
+
+  const viewbox = [-nodeRadius, -nodeRadius, width + 2 * nodeRadius, height + 2 * nodeRadius];
+  svgNode.attr("viewbox", viewbox.join(" "));
 
   const dag = dagProcessor(data);
 
