@@ -9,11 +9,13 @@ RUN dpkg -i pachctl.deb
 WORKDIR /app
 COPY config.sh .
 RUN chmod +x config.sh
-COPY pachyderm-widgets pachyderm-widgets
-
-WORKDIR /app/pachyderm-widgets
-RUN python setup.py clean build install
+COPY pachyderm-jupyterlab-extension pachyderm-jupyterlab-extension
 
 USER $NB_UID
+
+WORKDIR /app/pachyderm-jupyterlab-extension
+RUN pip install .
+RUN jupyter lab build
+
 WORKDIR /home/jovyan
 RUN pip install python-pachyderm
