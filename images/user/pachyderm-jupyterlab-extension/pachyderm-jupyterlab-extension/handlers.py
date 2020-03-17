@@ -28,7 +28,11 @@ class DAGHandler(APIHandler):
     # Jupyter server
     @tornado.web.authenticated
     def get(self):
-        client = python_pachyderm.Client() # TODO: switch to new_in_cluster
+        if "PACHD_SERVICE_HOST" in os.environ and "PACHD_SERVICE_PORT" in os.environ:
+            client = python_pachyderm.Client.new_in_cluster()
+        else:
+            client = python_pachyderm.Client()
+
         g = []
         pipeline_names = set()
 
