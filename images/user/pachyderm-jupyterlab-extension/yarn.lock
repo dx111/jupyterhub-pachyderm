@@ -292,6 +292,20 @@
     react "~16.9.0"
     typestyle "^2.0.4"
 
+"@jupyterlab/terminal@^2.0.2":
+  version "2.0.2"
+  resolved "https://registry.yarnpkg.com/@jupyterlab/terminal/-/terminal-2.0.2.tgz#5fb12d8890e5e6bcad4d36f844abc14d9eaf478d"
+  integrity sha512-wxDdVhJyjSZABkxshBkWYfmaFZTYYmatkpr/goYLVRoQtJFIbUTJDP3CWQG6J1FABXOZFbD0Z4C5MtQw6U2j+A==
+  dependencies:
+    "@jupyterlab/apputils" "^2.0.2"
+    "@jupyterlab/services" "^5.0.2"
+    "@lumino/coreutils" "^1.4.2"
+    "@lumino/domutils" "^1.1.7"
+    "@lumino/messaging" "^1.3.3"
+    "@lumino/widgets" "^1.11.1"
+    xterm "~4.2.0"
+    xterm-addon-fit "~0.3.0"
+
 "@jupyterlab/ui-components@^2.0.2":
   version "2.0.2"
   resolved "https://registry.yarnpkg.com/@jupyterlab/ui-components/-/ui-components-2.0.2.tgz#84a68bbb4fdca0d83ea2892fcf78a8a373716fa9"
@@ -1458,3 +1472,13 @@ xtend@^4.0.1:
   version "4.0.2"
   resolved "https://registry.yarnpkg.com/xtend/-/xtend-4.0.2.tgz#bb72779f5fa465186b1f438f674fa347fdb5db54"
   integrity sha512-LKYU1iAXJXUgAXn9URjiu+MWhyUXHsvfp7mcuYm9dSUKK0/CjtrUwFAxD82/mCWbtLsGjFIad0wIsod4zrTAEQ==
+
+xterm-addon-fit@~0.3.0:
+  version "0.3.0"
+  resolved "https://registry.yarnpkg.com/xterm-addon-fit/-/xterm-addon-fit-0.3.0.tgz#341710741027de9d648a9f84415a01ddfdbbe715"
+  integrity sha512-kvkiqHVrnMXgyCH9Xn0BOBJ7XaWC/4BgpSWQy3SueqximgW630t/QOankgqkvk11iTOCwWdAY9DTyQBXUMN3lw==
+
+xterm@~4.2.0:
+  version "4.2.0"
+  resolved "https://registry.yarnpkg.com/xterm/-/xterm-4.2.0.tgz#b9980b2ae18c64ed31bcc95eace3bcecffebbbd9"
+  integrity sha512-oNfLqt+LmghLPOt5UcskP5Km1fXpTBHsTZ99nxJKY2N0MNFXBKIVXUcNNhHCa74JGZFMGhLT58A/UN3HcPXSfg==
