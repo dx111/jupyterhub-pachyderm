@@ -1,5 +1,5 @@
 {
-    "pachctl": "1.9.12",
+    "pachctl": "1.10.0",
     "jupyterhub": "0.8.2",
     "hub_image": "1.0.2",
     "user_image": "widgets-0.1.2"
