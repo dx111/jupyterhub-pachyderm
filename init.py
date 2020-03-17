@@ -15,14 +15,21 @@ AUTH_TOKEN_PARSER = re.compile(r"  Token: ([0-9a-f]+)", re.MULTILINE)
 WHO_AM_I_PARSER = re.compile(r"You are \"(.+)\"")
 
 BASE_CONFIG = """
-hub:
-  image:
-    name: pachyderm/jupyterhub-pachyderm-hub
-    tag: "{version}"
 singleuser:
   image:
     name: pachyderm/jupyterhub-pachyderm-user
-    tag: "{version}"
+    tag: "{user_image_version}"
+  defaultUrl: "{default_url}"
+hub:
+  image:
+    name: pachyderm/jupyterhub-pachyderm-hub
+    tag: "{hub_image_version}"
+"""
+
+JUPYTERLAB_CONFIG = """
+  extraConfig:
+    jupyterlab: |
+      c.Spawner.cmd = ['jupyter-labhub']
 """
 
 AUTH_BASE_CONFIG = """
@@ -112,7 +119,7 @@ def run_helm(debug, *args, **kwargs):
 def print_section(section):
     print("===> {}".format(section))
 
-def main(debug, dry_run, tls_host, tls_email, jupyterhub_version, version):
+def main(debug, dry_run, tls_host, tls_email, legacy_ui, jupyterhub_version, hub_image_version, user_image_version):
     # print versions, which in the process validates that dependencies are installed
     print_section("checking dependencies are installed")
     run_version_check("kubectl", "version")
@@ -186,7 +193,14 @@ def main(debug, dry_run, tls_host, tls_email, jupyterhub_version, version):
     auth_state_crypto_key = secrets.token_hex(32)
     secret_token = secrets.token_hex(32)
 
-    config = BASE_CONFIG.format(version=version)
+    config = BASE_CONFIG.format(
+        hub_image_version=hub_image_version,
+        user_image_version=user_image_version,
+        default_url="/tree" if legacy_ui else "/lab"
+    )
+
+    if not legacy_ui:
+        config += JUPYTERLAB_CONFIG
 
     config += AUTH_BASE_CONFIG.format(
         auth_state_crypto_key=auth_state_crypto_key,
@@ -221,6 +235,7 @@ if __name__ == "__main__":
     parser.add_argument("--dry-run", default=False, action="store_true", help="Print out the Helm config rather than running the command.")
     parser.add_argument("--tls-host", default="", help="If set, TLS is enabled on JupyterHub via Let's Encrypt. The value is a hostname associated with the TLS certificate.")
     parser.add_argument("--tls-email", default="", help="If set, TLS is enabled on JupyterHub via Let's Encrypt. The value is an email address associated with the TLS certificate.")
+    parser.add_argument("--legacy-ui", default=False, action="store_true", help="Use the legacy UI (rather than JupyterLab.) Note that some functionality only works in JupyterLab.")
     args = parser.parse_args()
 
     # validate args
@@ -235,10 +250,11 @@ if __name__ == "__main__":
     with open("version.json", "r") as f:
         j = json.load(f)
         jupyterhub_version = j["jupyterhub"]
-        version = j["jupyterhub_pachyderm"]
+        hub_image_version = j["hub_image"]
+        user_image_version = j["user_image"]
 
     try:
-        main(args.debug, args.dry_run, args.tls_host, args.tls_email, jupyterhub_version, version)
+        main(args.debug, args.dry_run, args.tls_host, args.tls_email, args.legacy_ui, jupyterhub_version, hub_image_version, user_image_version)
     except ApplicationError as e:
         print("error: {}".format(e), file=sys.stderr)
         if args.debug:
