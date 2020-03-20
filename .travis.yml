@@ -1,0 +1,23 @@
+dist: xenial
+sudo: required
+services:
+- docker
+addons:
+  firefox: latest
+cache:
+  directories:
+    - ${HOME}/cached-deps
+env:
+  global:
+    - PATH=$HOME/cached-deps:$PATH
+
+matrix:
+  include:
+    - env: PACHYDERM_VERSION=1.10.0
+
+install:
+- ./etc/ci/install.sh
+before_script:
+- ./etc/ci/setup.sh
+script:
+- exit 0
