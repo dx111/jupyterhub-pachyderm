@@ -198,22 +198,21 @@ def main(debug, dry_run, tls_host, tls_email, jupyterhub_version, version):
     if tls_host:
         config += PROXY_TLS_CONFIG.format(tls_host=tls_host, tls_email=tls_email)
 
-    if dry_run:
-        print_section("config")
-        print(config)
-    else:
-        with tempfile.NamedTemporaryFile(delete=False) as f:
-            f.write(config.encode("utf8"))
-            f.close()
-            config_path = f.name
+    with tempfile.NamedTemporaryFile(delete=False) as f:
+        f.write(config.encode("utf8"))
+        f.close()
+        config_path = f.name
 
-        # install JupyterHub
-        print_section("installing jupyterhub")
-        try:
-            run_helm(debug, "upgrade", "--install", "jhub", "jupyterhub/jupyterhub", "--version={}".format(jupyterhub_version), "--values", config_path)
-        finally:
-            if not debug:
-                os.unlink(config_path)
+    # install JupyterHub
+    print_section("installing jupyterhub")
+    try:
+        args = [debug, "upgrade", "--install", "jhub", "jupyterhub/jupyterhub", "--version={}".format(jupyterhub_version), "--values", config_path]
+        if dry_run:
+            args.append("--dry-run")
+        run_helm(*args)
+    finally:
+        if not debug:
+            os.unlink(config_path)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Sets up JupyterHub on a kubernetes cluster that has Pachyderm running on it.")
