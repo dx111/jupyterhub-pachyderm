@@ -4,16 +4,7 @@ set -ex
 
 # Install base deps
 sudo apt-get update
-sudo apt-get install -y -qq \
-    jq \
-    python3 \
-    python3-pip \
-    python3-setuptools \
-    pkg-config
-
-# Install aws CLI (for TLS test)
-pip3 install --upgrade --user wheel
-pip3 install --upgrade --user awscli
+sudo apt-get install -y -qq jq
 
 # Install pachctl
 pachyderm_version=$(jq -r .pachctl < version.json)

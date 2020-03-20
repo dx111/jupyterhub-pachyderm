@@ -34,6 +34,6 @@ done
 pachctl deploy local -d
 until timeout ./etc/ci/check_ready.sh app=pachd; do sleep 1; done
 pachctl version
-pachctl enterprise activate "$(aws s3 cp s3://pachyderm-engineering/test_enterprise_activation_code.txt -)" && echo
+pachctl enterprise activate "${PACH_ENTERPRISE_CODE}"
 echo admin | pachctl auth activate
 pachctl auth whoami
