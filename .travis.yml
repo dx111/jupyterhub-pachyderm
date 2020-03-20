@@ -11,10 +11,6 @@ env:
   global:
     - PATH=$HOME/cached-deps:$PATH
 
-matrix:
-  include:
-    - env: PACHYDERM_VERSION=1.10.0
-
 install:
 - ./etc/ci/install.sh
 before_script:
