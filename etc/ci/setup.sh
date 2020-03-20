@@ -2,11 +2,9 @@
 
 set -ex
 
-# Parse flags
-VERSION=v1.13.0
 minikube_args=(
   "--vm-driver=none"
-  "--kubernetes-version=${VERSION}"
+  "--kubernetes-version=v1.13.0"
 )
 
 # Repeatedly restart minikube until it comes up. This corrects for an issue in
@@ -31,9 +29,12 @@ while true; do
   sleep 10 # Wait for minikube to go completely down
 done
 
+# Deploy pachyderm
 pachctl deploy local -d
 until timeout ./etc/ci/check_ready.sh app=pachd; do sleep 1; done
 pachctl version
+
+# Enable enterprise & auth
 pachctl enterprise activate "${PACH_ENTERPRISE_CODE}"
 echo admin | pachctl auth activate
 pachctl auth whoami
