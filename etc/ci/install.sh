@@ -12,9 +12,10 @@ sudo apt-get install -y -qq jq
 # curl -o /tmp/pachctl.deb -L https://github.com/pachyderm/pachyderm/releases/download/v$(pachyderm_version)/pachctl_$(pachyderm_version)_amd64.deb  && \
 # sudo dpkg -i /tmp/pachctl.deb
 pushd ~
-    git clone --single-branch --branch native-jupyterhub --depth 1 git@github.com:pachyderm/pachyderm.git
+    git clone --single-branch --branch native-jupyterhub --depth 1 https://github.com/pachyderm/pachyderm.git
     pushd pachyderm
-    make install
+        make install
+    popd
 popd
 
 # Install kubectl
