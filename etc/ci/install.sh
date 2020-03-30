@@ -4,7 +4,7 @@ set -ex
 
 # Install base deps
 sudo apt-get update
-sudo apt-get install -y -qq jq
+sudo apt-get install -y -qq jq socat
 
 # Install pachctl
 pachyderm_version=$(jq -r .pachctl < version.json)
