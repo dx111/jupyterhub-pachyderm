@@ -31,7 +31,7 @@ done
 
 # Deploy pachyderm
 pachctl deploy local -d
-until timeout ./etc/ci/check_ready.sh app=pachd; do sleep 1; done
+until timeout 1s ./etc/ci/check_ready.sh app=pachd; do sleep 1; done
 pachctl version
 
 # Enable enterprise & auth
