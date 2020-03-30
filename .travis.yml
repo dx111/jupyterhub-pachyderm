@@ -20,3 +20,10 @@ before_script:
 - ./etc/ci/setup.sh
 script:
 - exit 0
+
+after_failure:
+- kubectl version
+- kubectl get all
+- kubectl describe pod -l app=pachd
+- kubectl describe pod -l suite=pachyderm,app=etcd
+- kubectl logs -l app=pachd | tail -n 100
