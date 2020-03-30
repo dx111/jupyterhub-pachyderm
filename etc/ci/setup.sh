@@ -39,5 +39,12 @@ pachctl enterprise activate "${PACH_ENTERPRISE_CODE}"
 echo admin | pachctl auth activate
 pachctl auth whoami
 
-# Deploy jupyterhub 
-pachctl deploy jupyterhub
+# Deploy jupyterhub
+# TODO:remove once native jupyterhub deployments are stable
+pushd ~
+  git clone --single-branch --branch native-jupyterhub --depth 1 https://github.com/pachyderm/pachyderm.git
+  pushd pachyderm
+    make install
+  popd
+popd
+${GOPATH}/bin/pachctl deploy jupyterhub

@@ -7,16 +7,9 @@ sudo apt-get update
 sudo apt-get install -y -qq jq
 
 # Install pachctl
-# TODO: switch to this once native jupyterhub deployments are stable
-# pachyderm_version=$(jq -r .pachctl < version.json)
-# curl -o /tmp/pachctl.deb -L https://github.com/pachyderm/pachyderm/releases/download/v$(pachyderm_version)/pachctl_$(pachyderm_version)_amd64.deb  && \
-# sudo dpkg -i /tmp/pachctl.deb
-pushd ~
-    git clone --single-branch --branch native-jupyterhub --depth 1 https://github.com/pachyderm/pachyderm.git
-    pushd pachyderm
-        make install
-    popd
-popd
+pachyderm_version=$(jq -r .pachctl < version.json)
+curl -o /tmp/pachctl.deb -L https://github.com/pachyderm/pachyderm/releases/download/v$(pachyderm_version)/pachctl_$(pachyderm_version)_amd64.deb  && \
+sudo dpkg -i /tmp/pachctl.deb
 
 # Install kubectl
 # To get the latest kubectl version:
