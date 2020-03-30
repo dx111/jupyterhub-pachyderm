@@ -39,5 +39,5 @@ pachctl enterprise activate "${PACH_ENTERPRISE_CODE}"
 echo admin | pachctl auth activate
 pachctl auth whoami
 
-# Deploy 
-./init.py
+# Deploy jupyterhub 
+pachctl deploy jupyterhub
