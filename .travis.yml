@@ -2,6 +2,9 @@ dist: xenial
 sudo: required
 services:
 - docker
+language: go
+go:
+  - "1.13.1"
 addons:
   firefox: latest
 cache:
@@ -16,4 +19,11 @@ install:
 before_script:
 - ./etc/ci/setup.sh
 script:
-- exit 0
+- ./etc/ci/test.sh
+
+after_failure:
+- kubectl version
+- kubectl get all
+- kubectl describe pod -l app=pachd
+- kubectl describe pod -l suite=pachyderm,app=etcd
+- kubectl logs -l app=pachd | tail -n 100 

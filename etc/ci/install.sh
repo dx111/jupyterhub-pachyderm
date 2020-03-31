@@ -4,12 +4,18 @@ set -ex
 
 # Install base deps
 sudo apt-get update
-sudo apt-get install -y -qq jq
+sudo apt-get install -y -qq jq socat
 
 # Install pachctl
 pachyderm_version=$(jq -r .pachctl < version.json)
-curl -o /tmp/pachctl.deb -L https://github.com/pachyderm/pachyderm/releases/download/v$(pachyderm_version)/pachctl_$(pachyderm_version)_amd64.deb  && \
+curl -o /tmp/pachctl.deb -L https://github.com/pachyderm/pachyderm/releases/download/v${pachyderm_version}/pachctl_${pachyderm_version}_amd64.deb  && \
 sudo dpkg -i /tmp/pachctl.deb
+
+# Pull & retag images for dev deployment
+docker pull pachyderm/pachd:${pachyderm_version}
+docker tag pachyderm/pachd:${pachyderm_version} pachyderm/pachd:local
+docker pull pachyderm/worker:${pachyderm_version}
+docker tag pachyderm/worker:${pachyderm_version} pachyderm/worker:local
 
 # Install kubectl
 # To get the latest kubectl version:
