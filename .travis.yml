@@ -13,6 +13,9 @@ cache:
 env:
   global:
     - PATH=$HOME/cached-deps:$PATH
+  matrix:
+    - VARIANT=native
+    - VARIANT=init
 
 install:
 - ./etc/ci/install.sh

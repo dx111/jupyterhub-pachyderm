@@ -34,20 +34,7 @@ pachctl deploy local -d
 until timeout 1s ./etc/ci/check_ready.sh app=pachd; do sleep 1; done
 pachctl version
 
-# Install pachctl with native support
-# TODO:remove once native jupyterhub deployments are stable
-pushd ~
-  git clone --single-branch --branch native-jupyterhub --depth 1 https://github.com/pachyderm/pachyderm.git
-  pushd pachyderm
-    make install
-  popd
-popd
-
 # Enable enterprise & auth
 pachctl enterprise activate "${PACH_ENTERPRISE_CODE}"
 echo admin | pachctl auth activate
 pachctl auth whoami
-
-# Deploy jupyterhub
-
-${GOPATH}/bin/pachctl deploy jupyterhub
