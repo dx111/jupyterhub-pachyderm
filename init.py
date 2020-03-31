@@ -10,7 +10,7 @@ import tempfile
 import traceback
 import subprocess
 
-KUBE_CONTEXT_INFO_PARSER = re.compile(r"^\* +[^ ]+ +([^ ]+) +([^ ]+) +([^ \n]*)\n", re.MULTILINE)
+KUBE_CONTEXT_INFO_PARSER = re.compile(r"^\* +[^ ]* +([^ ]*) +([^ ]*) +([^ \n]*)\n", re.MULTILINE)
 AUTH_TOKEN_PARSER = re.compile(r"  Token: ([0-9a-f]+)", re.MULTILINE)
 WHO_AM_I_PARSER = re.compile(r"You are \"(.+)\"")
 
@@ -112,7 +112,7 @@ def run_helm(debug, *args, **kwargs):
 def print_section(section):
     print("===> {}".format(section))
 
-def main(debug, dry_run, tls_host, tls_email, jupyterhub_version, version):
+def main(debug, no_verify_contexts, dry_run, tls_host, tls_email, jupyterhub_version, version):
     # print versions, which in the process validates that dependencies are installed
     print_section("checking dependencies are installed")
     run_version_check("kubectl", "version")
@@ -123,44 +123,45 @@ def main(debug, dry_run, tls_host, tls_email, jupyterhub_version, version):
     run_helm(debug, "repo", "add", "jupyterhub", "https://jupyterhub.github.io/helm-chart/")
     run_helm(debug, "repo", "update")
 
-    # parse pach context
-    print_section("getting pachyderm context")
-    try:
-        pach_context_name = run("pachctl", "config", "get", "active-context", capture_stdout=True).strip()
-        pach_context_output = run("pachctl", "config", "get", "context", pach_context_name, capture_stdout=True)
-        pach_context_json = json.loads(pach_context_output)
-        pach_cluster = pach_context_json["cluster_name"]
-        pach_auth_info = pach_context_json["auth_info"]
-        pach_namespace = pach_context_json.get("namespace", "default")
-    except Exception as e:
-        raise ApplicationError("could not parse pach context info") from e
-    if debug:
-        print("pach cluster: {}".format(pach_cluster))
-        print("pach auth info: {}".format(pach_auth_info))
-        print("pach namespace: {}".format(pach_namespace))
+    if not no_verify_contexts:
+        # parse pach context
+        print_section("getting pachyderm context")
+        try:
+            pach_context_name = run("pachctl", "config", "get", "active-context", capture_stdout=True).strip()
+            pach_context_output = run("pachctl", "config", "get", "context", pach_context_name, capture_stdout=True)
+            pach_context_json = json.loads(pach_context_output)
+            pach_cluster = pach_context_json.get("cluster_name", "")
+            pach_auth_info = pach_context_json.get("auth_info", "")
+            pach_namespace = pach_context_json.get("namespace", "default")
+        except Exception as e:
+            raise ApplicationError("could not parse pach context info") from e
+        if debug:
+            print("pach cluster: {}".format(pach_cluster))
+            print("pach auth info: {}".format(pach_auth_info))
+            print("pach namespace: {}".format(pach_namespace))
 
-    # parse kubectl context
-    print_section("getting kubernetes context")
-    try:
-        kube_context_name = run("kubectl", "config", "current-context", capture_stdout=True).strip()
-        kube_context_output = run("kubectl", "config", "get-contexts", kube_context_name, capture_stdout=True)
-        kube_cluster, kube_auth_info, kube_namespace = KUBE_CONTEXT_INFO_PARSER.search(kube_context_output).groups()
-        kube_namespace = kube_namespace or "default"
-    except Exception as e:
-        raise ApplicationError("could not parse kube context info") from e
-    if debug:
-        print("kube cluster: {}".format(kube_cluster))
-        print("kube auth info: {}".format(kube_auth_info))
-        print("kube namespace: {}".format(kube_namespace))
+        # parse kubectl context
+        print_section("getting kubernetes context")
+        try:
+            kube_context_name = run("kubectl", "config", "current-context", capture_stdout=True).strip()
+            kube_context_output = run("kubectl", "config", "get-contexts", kube_context_name, capture_stdout=True)
+            kube_cluster, kube_auth_info, kube_namespace = KUBE_CONTEXT_INFO_PARSER.search(kube_context_output).groups()
+            kube_namespace = kube_namespace or "default"
+        except Exception as e:
+            raise ApplicationError("could not parse kube context info") from e
+        if debug:
+            print("kube cluster: {}".format(kube_cluster))
+            print("kube auth info: {}".format(kube_auth_info))
+            print("kube namespace: {}".format(kube_namespace))
 
-    # verify that the contexts are pointing to the same thing
-    print_section("comparing pachyderm/kubernetes contexts")
-    if pach_cluster != kube_cluster:
-        raise ApplicationError("the active pach context's cluster name ('{}') is not the same as the current kubernetes context's cluster name ('{}')".format(pach_cluster, kube_cluster))
-    if pach_auth_info != kube_auth_info:
-        raise ApplicationError("the active pach context's auth info ('{}') is not the same as the current kubernetes context's auth info ('{}')".format(pach_auth_info, kube_auth_info))
-    if pach_namespace != kube_namespace:
-        raise ApplicationError("the active pach context's namespace ('{}') is not the same as the current kubernetes context's namespace ('{}')".format(pach_namespace, kube_namespace))
+        # verify that the contexts are pointing to the same thing
+        print_section("comparing pachyderm/kubernetes contexts")
+        if pach_cluster != kube_cluster:
+            raise ApplicationError("the active pach context's cluster name ('{}') is not the same as the current kubernetes context's cluster name ('{}')".format(pach_cluster, kube_cluster))
+        if pach_auth_info != kube_auth_info:
+            raise ApplicationError("the active pach context's auth info ('{}') is not the same as the current kubernetes context's auth info ('{}')".format(pach_auth_info, kube_auth_info))
+        if pach_namespace != kube_namespace:
+            raise ApplicationError("the active pach context's namespace ('{}') is not the same as the current kubernetes context's namespace ('{}')".format(pach_namespace, kube_namespace))
 
     # verify enterprise is enabled
     print_section("checking enterprise")
@@ -217,6 +218,7 @@ def main(debug, dry_run, tls_host, tls_email, jupyterhub_version, version):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Sets up JupyterHub on a kubernetes cluster that has Pachyderm running on it.")
     parser.add_argument("--debug", default=False, action="store_true", help="Debug mode")
+    parser.add_argument("--no-verify-contexts", default=False, action="store_true", help="Disable verification that pachyderm and kubernetes contexts are the same.")
     parser.add_argument("--dry-run", default=False, action="store_true", help="Print out the Helm config rather than running the command.")
     parser.add_argument("--tls-host", default="", help="If set, TLS is enabled on JupyterHub via Let's Encrypt. The value is a hostname associated with the TLS certificate.")
     parser.add_argument("--tls-email", default="", help="If set, TLS is enabled on JupyterHub via Let's Encrypt. The value is an email address associated with the TLS certificate.")
@@ -237,7 +239,15 @@ if __name__ == "__main__":
         version = j["jupyterhub_pachyderm"]
 
     try:
-        main(args.debug, args.dry_run, args.tls_host, args.tls_email, jupyterhub_version, version)
+        main(
+            args.debug,
+            args.no_verify_contexts,
+            args.dry_run,
+            args.tls_host,
+            args.tls_email,
+            jupyterhub_version,
+            version
+        )
     except ApplicationError as e:
         print("error: {}".format(e), file=sys.stderr)
         if args.debug:
