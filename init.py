@@ -10,7 +10,7 @@ import tempfile
 import traceback
 import subprocess
 
-KUBE_CONTEXT_INFO_PARSER = re.compile(r"^\* +[^ ]+ +([^ ]+) +([^ ]+) +([^ \n]*)\n", re.MULTILINE)
+KUBE_CONTEXT_INFO_PARSER = re.compile(r"^\* +[^ ]* +([^ ]*) +([^ ]*) +([^ \n]*)\n", re.MULTILINE)
 AUTH_TOKEN_PARSER = re.compile(r"  Token: ([0-9a-f]+)", re.MULTILINE)
 WHO_AM_I_PARSER = re.compile(r"You are \"(.+)\"")
 
@@ -129,8 +129,8 @@ def main(debug, dry_run, tls_host, tls_email, jupyterhub_version, version):
         pach_context_name = run("pachctl", "config", "get", "active-context", capture_stdout=True).strip()
         pach_context_output = run("pachctl", "config", "get", "context", pach_context_name, capture_stdout=True)
         pach_context_json = json.loads(pach_context_output)
-        pach_cluster = pach_context_json["cluster_name"]
-        pach_auth_info = pach_context_json["auth_info"]
+        pach_cluster = pach_context_json.get("cluster_name", "")
+        pach_auth_info = pach_context_json.get("auth_info", "")
         pach_namespace = pach_context_json.get("namespace", "default")
     except Exception as e:
         raise ApplicationError("could not parse pach context info") from e
