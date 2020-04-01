@@ -1,8 +1,8 @@
 #!/bin/bash
 
 if [ -z "$1" ]; then
-  echo "Usage $0 label=value <optional_namespace>"
-  exit 1
+    echo "Usage $0 label=value <optional_namespace>"
+    exit 1
 fi
 
 namespace=default
@@ -12,15 +12,15 @@ if [ -n "$2" ]; then
 fi
 
 results=$(kubectl get pods \
-  -l "$1" \
-  --namespace="$namespace" \
-  -o jsonpath='{range .items[*]}{@.metadata.name}:{range @.status.conditions[*]}{@.type}={@.status};{end}{end}' \
-  2>/dev/null | tr ';' "\n")
+    -l "$1" \
+    --namespace="$namespace" \
+    -o jsonpath='{range .items[*]}{@.metadata.name}:{range @.status.conditions[*]}{@.type}={@.status};{end}{end}' \
+    2>/dev/null | tr ';' "\n")
 
 if [ -z "$results" ]; then
-  echo "Empty result"
-  echo "$results"
-  exit 1
+    echo "Empty result"
+    echo "$results"
+    exit 1
 fi
 
 

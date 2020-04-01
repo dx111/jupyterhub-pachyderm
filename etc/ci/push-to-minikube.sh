@@ -3,7 +3,7 @@
 # pulled/run by kubernetes pods
 
 if [[ $# -ne 1 ]]; then
-  echo "error: need the name of the docker image to push"
+    echo "error: need the name of the docker image to push"
 fi
 
 # Detect if minikube was started with --vm-driver=none by inspecting the output
@@ -11,12 +11,12 @@ fi
 if minikube docker-env \
     | grep -q "'none' driver does not support 'minikube docker-env' command"
 then
-  exit 0 # Nothing to push -- vm-driver=none uses the system docker daemon
+    exit 0 # Nothing to push -- vm-driver=none uses the system docker daemon
 fi
 
 command -v pv >/dev/null 2>&1 || { echo >&2 "Required command 'pv' not found. Run 'sudo apt-get install pv'."; exit 1; }
 
 docker save "${1}" | pv | (
-  eval "$(minikube docker-env)"
-  docker load
+    eval "$(minikube docker-env)"
+    docker load
 )
