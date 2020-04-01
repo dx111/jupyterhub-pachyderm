@@ -26,7 +26,9 @@ case "${VARIANT}" in
     popd
 
     # Deploy with pachctl
-    ${GOPATH}/bin/pachctl deploy jupyterhub
+    ${GOPATH}/bin/pachctl deploy jupyterhub \
+        --user-image pachyderm/jupyterhub-pachyderm-user:${image_version} \
+        --hub-image pachyderm/jupyterhub-pachyderm-hub:${image_version}
     ;;
  init)
     # Deploy with init.py
