@@ -30,7 +30,7 @@ case "${VARIANT}" in
     ;;
  init)
     # Deploy with init.py
-    ./init.py
+    python3.7 init.py
     ;;
  *)
     echo "Unknown testing variant"
