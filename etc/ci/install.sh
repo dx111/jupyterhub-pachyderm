@@ -36,3 +36,18 @@ if [ ! -f ~/cached-deps/minikube ] ; then
         chmod +x ./minikube && \
         mv ./minikube ~/cached-deps/minikube
 fi
+
+case "${VARIANT}" in
+ native)
+    # no extra dependencies to install
+    ;;
+ init)
+    sudo add-apt-repository -y ppa:deadsnakes/ppa
+    sudo apt-get update -y
+    sudo apt-get install -y python3.7
+    ;;
+ *)
+    echo "Unknown testing variant"
+    exit 1
+    ;;
+esac
