@@ -15,7 +15,7 @@ image_version=$(jq -r .jupyterhub_pachyderm < version.json)
 ./etc/ci/push-to-minikube.sh pachyderm/jupyterhub-pachyderm-user:${image_version}
 
 case "${VARIANT}" in
- NATIVE)
+ native)
     # Install pachctl with native support
     # TODO:remove once native jupyterhub deployments are stable
     pushd ~
@@ -28,7 +28,7 @@ case "${VARIANT}" in
     # Deploy with pachctl
     ${GOPATH}/bin/pachctl deploy jupyterhub
     ;;
- INIT)
+ init)
     # Deploy with init.py
     ./init.py
     ;;
