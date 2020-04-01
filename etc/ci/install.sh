@@ -37,17 +37,15 @@ if [ ! -f ~/cached-deps/minikube ] ; then
         mv ./minikube ~/cached-deps/minikube
 fi
 
-case "${VARIANT}" in
- native)
-    # no extra dependencies to install
-    ;;
- init)
+# Install init deployment-specific dependencies
+if [ "${VARIANT}" = "init" ]; then
     sudo add-apt-repository -y ppa:deadsnakes/ppa
     sudo apt-get update -y
     sudo apt-get install -y python3.7
-    ;;
- *)
-    echo "Unknown testing variant"
-    exit 1
-    ;;
-esac
+
+    if [ ! -f ~/cached-deps/helm ] ; then
+        wget https://get.helm.sh/helm-v3.1.2-linux-amd64.tar.gz
+        tar -zxvf helm-v3.1.2-linux-amd64.tar.gz
+        mv linux-amd64/helm ~/cached-deps/helm
+    fi
+fi
