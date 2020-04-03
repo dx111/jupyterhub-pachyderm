@@ -68,7 +68,7 @@ case "${VARIANT}" in
         test_run
 
         # Undeploy
-        echo yes | ${GOPATH}/bin/pachctl undeploy --jupyterhub
+        echo yes | ${GOPATH}/bin/pachctl undeploy --jupyterhub --metadata
 
         # Remove patched pachctl
         # TODO:remove once native jupyterhub deployments are stable
@@ -101,7 +101,7 @@ case "${VARIANT}" in
 
         # Undeploy
         ./delete.sh
-        echo yes | pachctl undeploy
+        echo yes | pachctl undeploy --all
 
         # Re-deploy pachyderm
         deploy_pachyderm
