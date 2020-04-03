@@ -55,9 +55,11 @@ case "${VARIANT}" in
             --hub-image pachyderm/jupyterhub-pachyderm-hub:${image_version}
         test_run
 
-        # Undeploy & restart minikube
+        # Undeploy
         echo yes | ${GOPATH}/bin/pachctl undeploy --jupyterhub --metadata
-        minikube stop
+
+        # Reset minikube
+        minikube delete
         ./etc/ci/start_minikube.sh
 
         # Re-deploy pachyderm
@@ -81,10 +83,11 @@ case "${VARIANT}" in
         python3.7 init.py
         test_run
 
-        # Undeploy & restart minikube
+        # Undeploy
         ./delete.sh
-        echo yes | pachctl undeploy --all
-        minikube stop
+
+        # Reset minikube
+        minikube delete
         ./etc/ci/start_minikube.sh
 
         # Re-deploy pachyderm
