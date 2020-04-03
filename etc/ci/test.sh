@@ -6,7 +6,7 @@ color_red='\033[0;31m'
 color_none='\033[0m'
 
 function print_section {
-    echo -e "I ${color_red}${1}${color_none}"
+    echo -e "${color_red}${1}${color_none}"
 }
 
 # Deploys pachyderm and activates enterprise+auth
