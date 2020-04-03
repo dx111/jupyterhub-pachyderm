@@ -34,6 +34,8 @@ function test_run {
     # TODO: run through testing the login process via selenium/firefox
 }
 
+./etc/ci/start_minikube.sh
+
 pushd images/hub
     make docker-build
 popd
@@ -67,8 +69,10 @@ case "${VARIANT}" in
             --hub-image pachyderm/jupyterhub-pachyderm-hub:${image_version}
         test_run
 
-        # Undeploy
+        # Undeploy & restart minikube
         echo yes | ${GOPATH}/bin/pachctl undeploy --jupyterhub --metadata
+        minikube stop
+        ./etc/ci/start_minikube.sh
 
         # Remove patched pachctl
         # TODO:remove once native jupyterhub deployments are stable
@@ -99,9 +103,11 @@ case "${VARIANT}" in
         python3.7 init.py
         test_run
 
-        # Undeploy
+        # Undeploy & restart minikube
         ./delete.sh
         echo yes | pachctl undeploy --all
+        minikube stop
+        ./etc/ci/start_minikube.sh
 
         # Re-deploy pachyderm
         deploy_pachyderm
