@@ -13,16 +13,6 @@ function deploy_pachyderm {
     pachctl auth whoami
 }
 
-# Installs pachctl with native support
-function install_patched_pachctl {
-    pushd ~
-        git clone --single-branch --branch native-jupyterhub --depth 1 https://github.com/pachyderm/pachyderm.git
-        pushd pachyderm
-            make install
-        popd
-    popd
-}
-
 # Waits for a given app to be ready
 function wait_for {
     until timeout 1s ./etc/ci/check_ready.sh app=$1; do sleep 1; done
@@ -53,10 +43,6 @@ case "${VARIANT}" in
         # Deploy pachyderm
         deploy_pachyderm
 
-        # Install pachctl with native deployment support
-        # TODO:remove once native jupyterhub deployments are stable
-        install_patched_pachctl
-
         # Deploy jupyterhub
         ${GOPATH}/bin/pachctl deploy jupyterhub \
             --user-image pachyderm/jupyterhub-pachyderm-user:${image_version} \
@@ -74,16 +60,8 @@ case "${VARIANT}" in
         minikube stop
         ./etc/ci/start_minikube.sh
 
-        # Remove patched pachctl
-        # TODO:remove once native jupyterhub deployments are stable
-        rm ${GOPATH}/bin/pachctl
-
         # Re-deploy pachyderm
         deploy_pachyderm
-
-        # Install pachctl with native deployment support
-        # TODO:remove once native jupyterhub deployments are stable
-        install_patched_pachctl
 
         # Re-deploy jupyterhub
         ${GOPATH}/bin/pachctl deploy jupyterhub \
