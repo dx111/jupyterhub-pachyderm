@@ -11,13 +11,13 @@ function print_section {
 
 # Deploys pachyderm and activates enterprise+auth
 function deploy_pachyderm {
-    pachctl deploy local -d
+    /usr/bin/pachctl deploy local -d
     wait_for pachd
-    pachctl version
+    /usr/bin/pachctl version
 
-    pachctl enterprise activate "${PACH_ENTERPRISE_CODE}"
-    echo admin | pachctl auth activate
-    pachctl auth whoami
+    /usr/bin/pachctl enterprise activate "${PACH_ENTERPRISE_CODE}"
+    echo admin | /usr/bin/pachctl auth activate
+    /usr/bin/pachctl auth whoami
 }
 
 # Waits for a given app to be ready
