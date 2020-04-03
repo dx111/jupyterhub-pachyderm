@@ -2,6 +2,9 @@
 
 set -ex
 
+# Use virtualenv
+source ~/cached-deps/venv/bin/activate
+
 # Deploys pachyderm and activates enterprise+auth
 function deploy_pachyderm {
     pachctl deploy local -d
@@ -34,6 +37,7 @@ function test_run {
     # TODO: run through testing the login process via selenium/firefox
 }
 
+# Build and push images
 pushd images/hub
     make docker-build
 popd
@@ -92,11 +96,11 @@ case "${VARIANT}" in
         deploy_pachyderm
 
         # Deploy jupyterhub
-        python3.7 init.py
+        python3 init.py
         test_run
 
         # Upgrade jupyterhub
-        python3.7 init.py
+        python3 init.py
         test_run
 
         # Undeploy
@@ -107,7 +111,7 @@ case "${VARIANT}" in
         deploy_pachyderm
 
         # Re-deploy jupyterhub
-        python3.7 init.py
+        python3 init.py
         test_run
         ;;
     existing)

@@ -3,8 +3,9 @@
 set -ex
 
 # Install base deps
+sudo add-apt-repository -y ppa:deadsnakes/ppa
 sudo apt-get update
-sudo apt-get install -y -qq jq socat
+sudo apt-get install -y -qq jq socat python3.7
 
 # Install pachctl
 pachyderm_version=$(jq -r .pachctl < version.json)
@@ -48,6 +49,13 @@ if [ ! -f ~/cached-deps/geckodriver ] ; then
 fi
 /etc/init.d/xvfb start || true
 
+# Setup virtualenv
+if [ ! -d ~/cached-deps/venv ] ; then
+    virtualenv -p python3.7 ~/cached-deps/venv
+    source ~/cached-deps/venv/bin/activate
+    pip3 install selenium
+fi
+
 # Variant-specific installations
 function install_helm {
     if [ ! -f ~/cached-deps/helm ] ; then
@@ -62,9 +70,6 @@ case "${VARIANT}" in
         # nothing extra needed here
         ;;
     python)
-        sudo add-apt-repository -y ppa:deadsnakes/ppa
-        sudo apt-get update -y
-        sudo apt-get install -y python3.7
         install_helm
         ;;
     existing)
