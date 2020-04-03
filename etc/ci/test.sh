@@ -34,7 +34,9 @@ function wait_for {
 # Executes a test run
 function test_run {
     wait_for jupyterhub
-    # TODO: run through testing the login process via selenium/firefox
+    
+    url=$(minikube service proxy-public --url | head -n 1)
+    python3 ./etc/ci/selenium_test.py "~/cached-deps/geckodriver/geckodriver" "${url}"
 }
 
 # Build and push images
