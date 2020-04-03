@@ -20,6 +20,8 @@ env:
 
 install:
 - ./etc/ci/install.sh
+before_script:
+- ./etc/ci/setup.sh
 script:
 - ./etc/ci/test.sh
 
