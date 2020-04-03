@@ -38,14 +38,12 @@ case "${VARIANT}" in
         ${GOPATH}/bin/pachctl deploy jupyterhub \
             --user-image pachyderm/jupyterhub-pachyderm-user:${image_version} \
             --hub-image pachyderm/jupyterhub-pachyderm-hub:${image_version}
-
         test_run
 
         # Re-deploy
         ${GOPATH}/bin/pachctl deploy jupyterhub \
             --user-image pachyderm/jupyterhub-pachyderm-user:${image_version} \
             --hub-image pachyderm/jupyterhub-pachyderm-hub:${image_version}
-
         test_run
 
         # Undeploy
@@ -72,7 +70,7 @@ case "${VARIANT}" in
         # Patch in the user image
         python3 ./etc/ci/existing_config.py patch \
             | helm upgrade jhub jupyterhub/jupyterhub --version 0.8.2 --values -
-        wait_for_jupyterhub
+        test_run
 
         # Undeploy
         ./delete.sh
