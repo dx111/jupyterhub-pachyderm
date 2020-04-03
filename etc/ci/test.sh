@@ -4,19 +4,17 @@ set -ex
 
 # Deploys pachyderm and activates enterprise+auth
 function deploy_pachyderm {
-    # Deploy pachyderm
     pachctl deploy local -d
     wait_for pachd
     pachctl version
 
-    # Enable enterprise & auth
     pachctl enterprise activate "${PACH_ENTERPRISE_CODE}"
     echo admin | pachctl auth activate
     pachctl auth whoami
 }
 
+# Installs pachctl with native support
 function install_patched_pachctl {
-    # Install pachctl with native support
     pushd ~
         git clone --single-branch --branch native-jupyterhub --depth 1 https://github.com/pachyderm/pachyderm.git
         pushd pachyderm
