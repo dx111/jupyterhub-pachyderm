@@ -15,7 +15,8 @@ env:
     - PATH=$HOME/cached-deps:$PATH
   matrix:
     - VARIANT=native
-    - VARIANT=init
+    - VARIANT=python
+    - VARIANT=existing
 
 install:
 - ./etc/ci/install.sh

@@ -2,8 +2,12 @@
 
 set -ex
 
-function test_run {
+function wait_for_jupyterhub {
     until timeout 1s ./etc/ci/check_ready.sh app=jupyterhub; do sleep 1; done
+}
+
+function test_run {
+    wait_for_jupyterhub
     # TODO: run through testing the login process via selenium/firefox
 }
 
@@ -47,7 +51,7 @@ case "${VARIANT}" in
         # Undeploy
         echo yes | ${GOPATH}/bin/pachctl undeploy --jupyterhub
         ;;
-    init)
+    python)
         # Deploy
         python3.7 init.py
         test_run
@@ -55,6 +59,20 @@ case "${VARIANT}" in
         # Re-deploy
         python3.7 init.py
         test_run
+
+        # Undeploy
+        ./delete.sh
+        ;;
+    existing)
+        # Create a base deploy
+        python3 ./etc/ci/existing_config.py base \
+            | helm upgrade --install jhub jupyterhub/jupyterhub --version 0.8.2 --values -
+        wait_for_jupyterhub
+
+        # Patch in the user image
+        python3 ./etc/ci/existing_config.py patch \
+            | helm upgrade jhub jupyterhub/jupyterhub --version 0.8.2 --values -
+        wait_for_jupyterhub
 
         # Undeploy
         ./delete.sh
