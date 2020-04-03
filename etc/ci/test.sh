@@ -86,8 +86,9 @@ case "${VARIANT}" in
         # Undeploy
         ./delete.sh
 
-        # Reset minikube
+        # Reset minikube and hostpaths
         minikube delete
+        sudo rm -rf /var/pachyderm
         ./etc/ci/start_minikube.sh
 
         # Re-deploy pachyderm
