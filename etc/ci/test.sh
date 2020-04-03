@@ -2,6 +2,11 @@
 
 set -ex
 
+function test_run {
+    until timeout 1s ./etc/ci/check_ready.sh app=jupyterhub; do sleep 1; done
+    # TODO: run through testing the login process via selenium/firefox
+}
+
 pushd images/hub
     make docker-build
 popd
@@ -30,10 +35,14 @@ case "${VARIANT}" in
             --user-image pachyderm/jupyterhub-pachyderm-user:${image_version} \
             --hub-image pachyderm/jupyterhub-pachyderm-hub:${image_version}
 
+        test_run
+
         # Re-deploy
         ${GOPATH}/bin/pachctl deploy jupyterhub \
             --user-image pachyderm/jupyterhub-pachyderm-user:${image_version} \
             --hub-image pachyderm/jupyterhub-pachyderm-hub:${image_version}
+
+        test_run
 
         # Undeploy
         ${GOPATH}/bin/pachctl undeploy --jupyterhub
@@ -41,9 +50,11 @@ case "${VARIANT}" in
     init)
         # Deploy
         python3.7 init.py
+        test_run
 
         # Re-deploy
         python3.7 init.py
+        test_run
 
         # Undeploy
         ./delete.sh
@@ -53,7 +64,3 @@ case "${VARIANT}" in
         exit 1
         ;;
 esac
-
-until timeout 1s ./etc/ci/check_ready.sh app=jupyterhub; do sleep 1; done
-
-# TODO: run through testing the login process via selenium/firefox
