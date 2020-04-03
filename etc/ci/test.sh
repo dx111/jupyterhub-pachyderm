@@ -2,12 +2,37 @@
 
 set -ex
 
-function wait_for_jupyterhub {
-    until timeout 1s ./etc/ci/check_ready.sh app=jupyterhub; do sleep 1; done
+# Deploys pachyderm and activates enterprise+auth
+function deploy_pachyderm {
+    # Deploy pachyderm
+    pachctl deploy local -d
+    wait_for pachd
+    pachctl version
+
+    # Enable enterprise & auth
+    pachctl enterprise activate "${PACH_ENTERPRISE_CODE}"
+    echo admin | pachctl auth activate
+    pachctl auth whoami
 }
 
+function install_patched_pachctl {
+    # Install pachctl with native support
+    pushd ~
+        git clone --single-branch --branch native-jupyterhub --depth 1 https://github.com/pachyderm/pachyderm.git
+        pushd pachyderm
+            make install
+        popd
+    popd
+}
+
+# Waits for a given app to be ready
+function wait_for {
+    until timeout 1s ./etc/ci/check_ready.sh app=$1; do sleep 1; done
+}
+
+# Executes a test run
 function test_run {
-    wait_for_jupyterhub
+    wait_for jupyterhub
     # TODO: run through testing the login process via selenium/firefox
 }
 
@@ -25,22 +50,20 @@ image_version=$(jq -r .jupyterhub_pachyderm < version.json)
 
 case "${VARIANT}" in
     native)
-        # Install pachctl with native support
-        # TODO:remove once native jupyterhub deployments are stable
-        pushd ~
-            git clone --single-branch --branch native-jupyterhub --depth 1 https://github.com/pachyderm/pachyderm.git
-            pushd pachyderm
-                make install
-            popd
-        popd
+        # Deploy pachyderm
+        deploy_pachyderm
 
-        # Deploy
+        # Install pachctl with native deployment support
+        # TODO:remove once native jupyterhub deployments are stable
+        install_patched_pachctl
+
+        # Deploy jupyterhub
         ${GOPATH}/bin/pachctl deploy jupyterhub \
             --user-image pachyderm/jupyterhub-pachyderm-user:${image_version} \
             --hub-image pachyderm/jupyterhub-pachyderm-hub:${image_version}
         test_run
 
-        # Re-deploy
+        # Upgrade jupyterhub
         ${GOPATH}/bin/pachctl deploy jupyterhub \
             --user-image pachyderm/jupyterhub-pachyderm-user:${image_version} \
             --hub-image pachyderm/jupyterhub-pachyderm-hub:${image_version}
@@ -48,24 +71,52 @@ case "${VARIANT}" in
 
         # Undeploy
         echo yes | ${GOPATH}/bin/pachctl undeploy --jupyterhub
+
+        # Remove patched pachctl
+        # TODO:remove once native jupyterhub deployments are stable
+        rm ${GOPATH}/bin/pachctl
+
+        # Re-deploy pachyderm
+        deploy_pachyderm
+
+        # Install pachctl with native deployment support
+        # TODO:remove once native jupyterhub deployments are stable
+        install_patched_pachctl
+
+        # Re-deploy jupyterhub
+        ${GOPATH}/bin/pachctl deploy jupyterhub \
+            --user-image pachyderm/jupyterhub-pachyderm-user:${image_version} \
+            --hub-image pachyderm/jupyterhub-pachyderm-hub:${image_version}
+        test_run
         ;;
     python)
-        # Deploy
+        # Deploy pachyderm
+        deploy_pachyderm
+
+        # Deploy jupyterhub
         python3.7 init.py
         test_run
 
-        # Re-deploy
+        # Upgrade jupyterhub
         python3.7 init.py
         test_run
 
         # Undeploy
         ./delete.sh
+        echo yes | pachctl undeploy
+
+        # Re-deploy pachyderm
+        deploy_pachyderm
+
+        # Re-deploy jupyterhub
+        python3.7 init.py
+        test_run
         ;;
     existing)
-        # Create a base deploy
+        # Create a base deployment of jupyterhub
         python3 ./etc/ci/existing_config.py base \
             | helm upgrade --install jhub jupyterhub/jupyterhub --version 0.8.2 --values -
-        wait_for_jupyterhub
+        wait_for jupyterhub
 
         # Patch in the user image
         python3 ./etc/ci/existing_config.py patch \
