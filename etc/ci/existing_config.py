@@ -8,7 +8,7 @@ import json
 
 BASE_CONFIG = """
 proxy:
-  secretToken: "3c3ca170c431202b36abe6497599fea42e400a0dfbe01b77f0676d9bca9b3334"
+  secretToken: "7509f6a7cc1da6167b98af5c0bbea97a"
 """
 
 PATCH_CONFIG = """
