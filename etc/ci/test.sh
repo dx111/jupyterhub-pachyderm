@@ -34,9 +34,10 @@ function wait_for {
 # Executes a test run
 function test_run {
     wait_for jupyterhub
-    
+
     url=$(minikube service proxy-public --url | head -n 1)
-    python3 ./etc/ci/selenium_test.py "~/cached-deps/geckodriver/geckodriver" "${url}"
+    otp=$(pachctl auth get-otp)
+    python3 ./etc/ci/selenium_test.py "~/cached-deps/geckodriver/geckodriver" "${url}" "${otp}"
 }
 
 # Build and push images
