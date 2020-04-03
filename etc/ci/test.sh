@@ -112,12 +112,12 @@ case "${VARIANT}" in
         ;;
     existing)
         # Create a base deployment of jupyterhub
-        python3 ./etc/ci/existing_config.py base \
+        python3.7 ./etc/ci/existing_config.py base \
             | helm upgrade --install jhub jupyterhub/jupyterhub --version 0.8.2 --values -
         wait_for jupyterhub
 
         # Patch in the user image
-        python3 ./etc/ci/existing_config.py patch \
+        python3.7 ./etc/ci/existing_config.py patch \
             | helm upgrade jhub jupyterhub/jupyterhub --version 0.8.2 --values -
         test_run
 
