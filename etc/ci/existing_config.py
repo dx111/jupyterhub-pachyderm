@@ -5,7 +5,6 @@
 
 import sys
 import json
-import secrets
 
 BASE_CONFIG = """
 proxy:
