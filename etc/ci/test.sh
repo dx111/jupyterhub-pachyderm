@@ -93,13 +93,13 @@ case "${VARIANT}" in
         ;;
     existing)
         print_section "Create a base deployment of jupyterhub"
-        python3 ./etc/ci/existing_config.py base \
-            | helm upgrade --install jhub jupyterhub/jupyterhub --version 0.8.2 --values -
+        python3 ./etc/ci/existing_config.py base > /tmp/base-config.yaml
+        helm upgrade --install jhub jupyterhub/jupyterhub --version 0.8.2 --values /tmp/base-config.yaml
         wait_for jupyterhub
 
         print_section "Patch in the user image"
-        python3 ./etc/ci/existing_config.py patch \
-            | helm upgrade jhub jupyterhub/jupyterhub --version 0.8.2 --values -
+        python3 ./etc/ci/existing_config.py patch > /tmp/patch-config.yaml
+        helm upgrade jhub jupyterhub/jupyterhub --version 0.8.2 --values /tmp/patch-config.yaml
         test_run
 
         print_section "Undeploy"
