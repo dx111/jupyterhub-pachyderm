@@ -1,0 +1,32 @@
+dist: xenial
+sudo: required
+services:
+- docker
+language: go
+go:
+  - "1.13.1"
+addons:
+  firefox: latest
+cache:
+  directories:
+    - ${HOME}/cached-deps
+env:
+  global:
+    - PATH=$HOME/cached-deps:$PATH
+  matrix:
+    - VARIANT=native
+    - VARIANT=init
+
+install:
+- ./etc/ci/install.sh
+before_script:
+- ./etc/ci/setup.sh
+script:
+- ./etc/ci/test.sh
+
+after_failure:
+- kubectl version
+- kubectl get all
+- kubectl describe pod -l app=pachd
+- kubectl describe pod -l suite=pachyderm,app=etcd
+- kubectl logs -l app=pachd | tail -n 100 
