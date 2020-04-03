@@ -45,7 +45,7 @@ case "${VARIANT}" in
         test_run
 
         # Undeploy
-        ${GOPATH}/bin/pachctl undeploy --jupyterhub
+        echo yes | ${GOPATH}/bin/pachctl undeploy --jupyterhub
         ;;
     init)
         # Deploy
