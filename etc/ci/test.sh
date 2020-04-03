@@ -25,14 +25,28 @@ case "${VARIANT}" in
             popd
         popd
 
-        # Deploy with pachctl
+        # Deploy
         ${GOPATH}/bin/pachctl deploy jupyterhub \
             --user-image pachyderm/jupyterhub-pachyderm-user:${image_version} \
             --hub-image pachyderm/jupyterhub-pachyderm-hub:${image_version}
+
+        # Re-deploy
+        ${GOPATH}/bin/pachctl deploy jupyterhub \
+            --user-image pachyderm/jupyterhub-pachyderm-user:${image_version} \
+            --hub-image pachyderm/jupyterhub-pachyderm-hub:${image_version}
+
+        # Undeploy
+        ${GOPATH}/bin/pachctl undeploy --jupyterhub
         ;;
     init)
-        # Deploy with init.py
+        # Deploy
         python3.7 init.py
+
+        # Re-deploy
+        python3.7 init.py
+
+        # Undeploy
+        ./delete.sh
         ;;
     *)
         echo "Unknown testing variant"
