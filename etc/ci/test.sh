@@ -1,29 +1,26 @@
 #!/bin/bash
 
-set -ex
+set -e
+
+color_red='\033[0;31m'
+color_none='\033[0m'
+
+function print_section {
+    echo -e "${color_red}${1}${color_none}"
+}
 
 # Use virtualenv
 source ~/cached-deps/venv/bin/activate
 
 # Deploys pachyderm and activates enterprise+auth
 function deploy_pachyderm {
-    pachctl deploy local -d
+    /usr/bin/pachctl deploy local -d
     wait_for pachd
-    pachctl version
+    /usr/bin/pachctl version
 
-    pachctl enterprise activate "${PACH_ENTERPRISE_CODE}"
-    echo admin | pachctl auth activate
-    pachctl auth whoami
-}
-
-# Installs pachctl with native support
-function install_patched_pachctl {
-    pushd ~
-        git clone --single-branch --branch native-jupyterhub --depth 1 https://github.com/pachyderm/pachyderm.git
-        pushd pachyderm
-            make install
-        popd
-    popd
+    /usr/bin/pachctl enterprise activate "${PACH_ENTERPRISE_CODE}"
+    echo admin | /usr/bin/pachctl auth activate
+    /usr/bin/pachctl auth whoami
 }
 
 # Waits for a given app to be ready
@@ -40,95 +37,81 @@ function test_run {
     python3 ./etc/ci/selenium_test.py "~/cached-deps/geckodriver/geckodriver" "${url}" "${otp}"
 }
 
-# Build and push images
-pushd images/hub
-    make docker-build
-popd
-
-pushd images/user
-    make docker-build
-popd
-
-image_version=$(jq -r .jupyterhub_pachyderm < version.json)
-./etc/ci/push-to-minikube.sh pachyderm/jupyterhub-pachyderm-hub:${image_version}
-./etc/ci/push-to-minikube.sh pachyderm/jupyterhub-pachyderm-user:${image_version}
-
 case "${VARIANT}" in
     native)
-        # Deploy pachyderm
+        image_version=$(jq -r .jupyterhub_pachyderm < version.json)
+
+        print_section "Deploy pachyderm"
         deploy_pachyderm
 
-        # Install pachctl with native deployment support
-        # TODO:remove once native jupyterhub deployments are stable
-        install_patched_pachctl
-
-        # Deploy jupyterhub
+        print_section "Deploy jupyterhub"
         ${GOPATH}/bin/pachctl deploy jupyterhub \
-            --user-image pachyderm/jupyterhub-pachyderm-user:${image_version} \
-            --hub-image pachyderm/jupyterhub-pachyderm-hub:${image_version}
+            --user-image "pachyderm/jupyterhub-pachyderm-user:${image_version}" \
+            --hub-image "pachyderm/jupyterhub-pachyderm-hub:${image_version}"
         test_run
 
-        # Upgrade jupyterhub
+        print_section "Upgrade jupyterhub"
         ${GOPATH}/bin/pachctl deploy jupyterhub \
-            --user-image pachyderm/jupyterhub-pachyderm-user:${image_version} \
-            --hub-image pachyderm/jupyterhub-pachyderm-hub:${image_version}
+            --user-image "pachyderm/jupyterhub-pachyderm-user:${image_version}" \
+            --hub-image "pachyderm/jupyterhub-pachyderm-hub:${image_version}"
         test_run
 
-        # Undeploy
-        echo yes | ${GOPATH}/bin/pachctl undeploy --jupyterhub
+        print_section "Undeploy"
+        echo yes | ${GOPATH}/bin/pachctl undeploy --jupyterhub --metadata
 
-        # Remove patched pachctl
-        # TODO:remove once native jupyterhub deployments are stable
-        rm ${GOPATH}/bin/pachctl
+        print_section "Reset minikube"
+        minikube delete
+        sudo rm -rf /var/pachyderm
+        ./etc/ci/start_minikube.sh
 
-        # Re-deploy pachyderm
+        print_section "Re-deploy pachyderm"
         deploy_pachyderm
 
-        # Install pachctl with native deployment support
-        # TODO:remove once native jupyterhub deployments are stable
-        install_patched_pachctl
-
-        # Re-deploy jupyterhub
+        print_section "Re-deploy jupyterhub"
         ${GOPATH}/bin/pachctl deploy jupyterhub \
-            --user-image pachyderm/jupyterhub-pachyderm-user:${image_version} \
-            --hub-image pachyderm/jupyterhub-pachyderm-hub:${image_version}
+            --user-image "pachyderm/jupyterhub-pachyderm-user:${image_version}" \
+            --hub-image "pachyderm/jupyterhub-pachyderm-hub:${image_version}"
         test_run
         ;;
     python)
-        # Deploy pachyderm
+        print_section "Deploy pachyderm"
         deploy_pachyderm
 
-        # Deploy jupyterhub
-        python3 init.py
+        print_section "Deploy jupyterhub"
+        python3.7 init.py
         test_run
 
-        # Upgrade jupyterhub
-        python3 init.py
+        print_section "Upgrade jupyterhub"
+        python3.7 init.py
         test_run
 
-        # Undeploy
+        print_section "Undeploy"
         ./delete.sh
-        echo yes | pachctl undeploy
 
-        # Re-deploy pachyderm
+        print_section "Reset minikube and hostpaths"
+        minikube delete
+        sudo rm -rf /var/pachyderm
+        ./etc/ci/start_minikube.sh
+
+        print_section "Re-deploy pachyderm"
         deploy_pachyderm
 
-        # Re-deploy jupyterhub
-        python3 init.py
+        print_section "Re-deploy jupyterhub"
+        python3.7 init.py
         test_run
         ;;
     existing)
-        # Create a base deployment of jupyterhub
-        python3 ./etc/ci/existing_config.py base \
-            | helm upgrade --install jhub jupyterhub/jupyterhub --version 0.8.2 --values -
+        print_section "Create a base deployment of jupyterhub"
+        python3 ./etc/ci/existing_config.py base > /tmp/base-config.yaml
+        helm upgrade --install jhub jupyterhub/jupyterhub --version 0.8.2 --values /tmp/base-config.yaml
         wait_for jupyterhub
 
-        # Patch in the user image
-        python3 ./etc/ci/existing_config.py patch \
-            | helm upgrade jhub jupyterhub/jupyterhub --version 0.8.2 --values -
+        print_section "Patch in the user image"
+        python3 ./etc/ci/existing_config.py patch > /tmp/patch-config.yaml
+        helm upgrade jhub jupyterhub/jupyterhub --version 0.8.2 --values /tmp/patch-config.yaml
         test_run
 
-        # Undeploy
+        print_section "Undeploy"
         ./delete.sh
         ;;
     *)
