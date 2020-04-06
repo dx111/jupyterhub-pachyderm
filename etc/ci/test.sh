@@ -55,6 +55,7 @@ case "${VARIANT}" in
 
         print_section "Reset minikube"
         minikube delete
+        sudo rm -rf /var/pachyderm
         ./etc/ci/start_minikube.sh
 
         print_section "Re-deploy pachyderm"
