@@ -37,12 +37,12 @@ function test_run {
     python3 ./etc/ci/selenium_test.py "${HOME}/cached-deps/geckodriver/geckodriver" "${url}" "${otp}"
 }
 
+print_section "Deploy pachyderm"
+deploy_pachyderm
+
 case "${VARIANT}" in
     native)
         image_version=$(jq -r .jupyterhub_pachyderm < version.json)
-
-        print_section "Deploy pachyderm"
-        deploy_pachyderm
 
         print_section "Deploy jupyterhub"
         ${GOPATH}/bin/pachctl deploy jupyterhub \
@@ -74,9 +74,6 @@ case "${VARIANT}" in
         test_run
         ;;
     python)
-        print_section "Deploy pachyderm"
-        deploy_pachyderm
-
         print_section "Deploy jupyterhub"
         python3.7 init.py
         test_run
