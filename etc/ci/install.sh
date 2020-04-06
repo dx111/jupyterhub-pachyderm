@@ -37,15 +37,39 @@ if [ ! -f ~/cached-deps/minikube ] ; then
         mv ./minikube ~/cached-deps/minikube
 fi
 
-# Install init deployment-specific dependencies
-if [ "${VARIANT}" = "init" ]; then
-    sudo add-apt-repository -y ppa:deadsnakes/ppa
-    sudo apt-get update -y
-    sudo apt-get install -y python3.7
-
+# Variant-specific installations
+function install_helm {
     if [ ! -f ~/cached-deps/helm ] ; then
         wget https://get.helm.sh/helm-v3.1.2-linux-amd64.tar.gz
         tar -zxvf helm-v3.1.2-linux-amd64.tar.gz
         mv linux-amd64/helm ~/cached-deps/helm
     fi
-fi
+}
+
+case "${VARIANT}" in
+    native)
+        # Installs pachctl with native support
+        # TODO: remove once native jupyterhub deployments are stable
+        pushd ~
+            git clone --single-branch --branch native-jupyterhub --depth 1 https://github.com/pachyderm/pachyderm.git
+            pushd pachyderm
+                make install
+            popd
+        popd
+        ;;
+    python)
+        sudo add-apt-repository -y ppa:deadsnakes/ppa
+        sudo apt-get update -y
+        sudo apt-get install -y python3.7
+        install_helm
+        ;;
+    existing)
+        install_helm
+        helm repo add jupyterhub https://jupyterhub.github.io/helm-chart/
+        helm repo update
+        ;;
+    *)
+        echo "Unknown testing variant"
+        exit 1
+        ;;
+esac
