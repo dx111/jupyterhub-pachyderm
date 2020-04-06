@@ -10,7 +10,7 @@ MAX_LOAD_COUNT = 10
 
 def main(webdriver_path, url, username, password):
     opts = Options()
-    # opts.headless = True
+    opts.headless = True
     driver = webdriver.Firefox(executable_path=webdriver_path, options=opts)
 
     # Login
