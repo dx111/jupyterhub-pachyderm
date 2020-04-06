@@ -8,15 +8,17 @@ from selenium.webdriver.firefox.options import Options
 
 MAX_LOAD_COUNT = 10
 
-def main(webdriver_path, url, otp):
+def main(webdriver_path, url, username, password):
     opts = Options()
-    opts.headless = True
+    # opts.headless = True
     driver = webdriver.Firefox(executable_path=webdriver_path, options=opts)
 
     # Login
     driver.get(url)
+    username_field = driver.find_element_by_id("username_input")
+    username_field.send_keys(username)
     password_field = driver.find_element_by_id("password_input")
-    password_field.send_keys(otp)
+    password_field.send_keys(password)
     driver.find_element_by_id("login_submit").click()
 
     # See if we're on the loading page
@@ -34,6 +36,6 @@ def main(webdriver_path, url, otp):
 if __name__ == '__main__':
     webdriver_path = sys.argv[1]
     url = sys.argv[2]
-    otp = sys.argv[3]
-    print("url={}, otp={}".format(url, otp))
-    main(webdriver_path, url, otp)
+    username = sys.argv[3]
+    password = sys.argv[4]
+    main(webdriver_path, url, username, password)

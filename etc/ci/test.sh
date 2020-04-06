@@ -31,10 +31,8 @@ function wait_for {
 # Executes a test run
 function test_run {
     wait_for jupyterhub
-
     url=$(minikube service proxy-public --url | head -n 1)
-    otp=$(pachctl auth get-otp)
-    python3 ./etc/ci/selenium_test.py "${HOME}/cached-deps/geckodriver/geckodriver" "${url}" "${otp}"
+    python3 ./etc/ci/selenium_test.py "${HOME}/cached-deps/geckodriver/geckodriver" "${url}" "${1-}" "${2-$(pachctl auth get-otp)}"
 }
 
 print_section "Deploy pachyderm"
@@ -106,10 +104,7 @@ case "${VARIANT}" in
         print_section "Patch in the user image"
         python3 ./etc/ci/existing_config.py patch > /tmp/patch-config.yaml
         helm upgrade jhub jupyterhub/jupyterhub --version 0.8.2 --values /tmp/patch-config.yaml
-        test_run
-
-        print_section "Undeploy"
-        ./delete.sh
+        test_run jovyan jupyter
         ;;
     *)
         echo "Unknown testing variant"
