@@ -38,14 +38,14 @@ case "${VARIANT}" in
 
         print_section "Deploy jupyterhub"
         ${GOPATH}/bin/pachctl deploy jupyterhub \
-            --user-image pachyderm/jupyterhub-pachyderm-user:${image_version} \
-            --hub-image pachyderm/jupyterhub-pachyderm-hub:${image_version}
+            --user-image "pachyderm/jupyterhub-pachyderm-user:${image_version}" \
+            --hub-image "pachyderm/jupyterhub-pachyderm-hub:${image_version}"
         test_run
 
         print_section "Upgrade jupyterhub"
         ${GOPATH}/bin/pachctl deploy jupyterhub \
-            --user-image pachyderm/jupyterhub-pachyderm-user:${image_version} \
-            --hub-image pachyderm/jupyterhub-pachyderm-hub:${image_version}
+            --user-image "pachyderm/jupyterhub-pachyderm-user:${image_version}" \
+            --hub-image "pachyderm/jupyterhub-pachyderm-hub:${image_version}"
         test_run
 
         print_section "Undeploy"
@@ -60,8 +60,8 @@ case "${VARIANT}" in
 
         print_section "Re-deploy jupyterhub"
         ${GOPATH}/bin/pachctl deploy jupyterhub \
-            --user-image pachyderm/jupyterhub-pachyderm-user:${image_version} \
-            --hub-image pachyderm/jupyterhub-pachyderm-hub:${image_version}
+            --user-image "pachyderm/jupyterhub-pachyderm-user:${image_version}" \
+            --hub-image "pachyderm/jupyterhub-pachyderm-hub:${image_version}"
         test_run
         ;;
     python)
