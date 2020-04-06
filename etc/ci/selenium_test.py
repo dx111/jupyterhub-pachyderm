@@ -24,7 +24,7 @@ def main(webdriver_path, url, otp):
     while driver.title == "JupyterHub":
         load_count += 1
         assert load_count < MAX_LOAD_COUNT, "waited too long for JupyterHub user homepage to load"
-        time.sleep(1.0)
+        time.sleep(3.0)
 
     # Verify we're logged in
     assert driver.title == "Home Page - Select or create a notebook", "not in the user homepage"
