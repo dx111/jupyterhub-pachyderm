@@ -4,11 +4,14 @@ import sys
 import time
 
 from selenium import webdriver
+from selenium.webdriver.firefox.options import Options
 
 MAX_LOAD_COUNT = 10
 
 def main(webdriver_path, url, otp):
-    driver = webdriver.Firefox(executable_path=webdriver_path)
+    opts = Options()
+    opts.headless = True
+    driver = webdriver.Firefox(executable_path=webdriver_path, options=opts)
 
     # Login
     driver.get(url)
