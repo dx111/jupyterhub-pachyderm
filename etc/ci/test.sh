@@ -34,7 +34,7 @@ function test_run {
 
     url=$(minikube service proxy-public --url | head -n 1)
     otp=$(pachctl auth get-otp)
-    python3 ./etc/ci/selenium_test.py "~/cached-deps/geckodriver/geckodriver" "${url}" "${otp}"
+    python3 ./etc/ci/selenium_test.py "${HOME}/cached-deps/geckodriver/geckodriver" "${url}" "${otp}"
 }
 
 case "${VARIANT}" in
