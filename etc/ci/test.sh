@@ -33,6 +33,8 @@ function test_run {
 
 case "${VARIANT}" in
     native)
+        image_version=$(jq -r .jupyterhub_pachyderm < version.json)
+
         print_section "Deploy pachyderm"
         deploy_pachyderm
 
