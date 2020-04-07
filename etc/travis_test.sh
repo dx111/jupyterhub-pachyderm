@@ -36,6 +36,7 @@ function test_run {
         "${1-}" "${2-$(pachctl auth get-otp)}" \
         --webdriver="${HOME}/cached-deps/geckodriver/geckodriver" \
         --headless
+}
 
 print_section "Deploy pachyderm"
 deploy_pachyderm
