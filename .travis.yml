@@ -20,11 +20,11 @@ env:
     - VARIANT=existing
 
 install:
-- ./etc/ci/install.sh
+- ./etc/travis_install.sh
 before_script:
-- ./etc/ci/setup.sh
+- ./etc/travis_setup.sh
 script:
-- ./etc/ci/test.sh
+- ./etc/travis_test.sh
 
 after_failure:
 - firefox -v

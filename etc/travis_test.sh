@@ -25,14 +25,14 @@ function deploy_pachyderm {
 
 # Waits for a given app to be ready
 function wait_for {
-    until timeout 1s ./etc/ci/check_ready.sh app=$1; do sleep 1; done
+    until timeout 1s ./etc/check_ready.sh app=$1; do sleep 1; done
 }
 
 # Executes a test run
 function test_run {
     wait_for jupyterhub
     url=$(minikube service proxy-public --url | head -n 1)
-    python3 ./etc/ci/test.py "${url}" \
+    python3 ./etc/test.py "${url}" \
         "${1-}" "${2-$(pachctl auth get-otp)}" \
         --webdriver="${HOME}/cached-deps/geckodriver/geckodriver" \
         --headless
@@ -62,7 +62,7 @@ case "${VARIANT}" in
         print_section "Reset minikube"
         minikube delete
         sudo rm -rf /var/pachyderm
-        ./etc/ci/start_minikube.sh
+        ./etc/start_minikube.sh
 
         print_section "Re-deploy pachyderm"
         deploy_pachyderm
@@ -88,7 +88,7 @@ case "${VARIANT}" in
         print_section "Reset minikube and hostpaths"
         minikube delete
         sudo rm -rf /var/pachyderm
-        ./etc/ci/start_minikube.sh
+        ./etc/start_minikube.sh
 
         print_section "Re-deploy pachyderm"
         deploy_pachyderm
@@ -99,12 +99,12 @@ case "${VARIANT}" in
         ;;
     existing)
         print_section "Create a base deployment of jupyterhub"
-        python3 ./etc/ci/existing_config.py base > /tmp/base-config.yaml
+        python3 ./etc/existing_config.py base > /tmp/base-config.yaml
         helm upgrade --install jhub jupyterhub/jupyterhub --version 0.8.2 --values /tmp/base-config.yaml
         wait_for jupyterhub
 
         print_section "Patch in the user image"
-        python3 ./etc/ci/existing_config.py patch > /tmp/patch-config.yaml
+        python3 ./etc/existing_config.py patch > /tmp/patch-config.yaml
         helm upgrade jhub jupyterhub/jupyterhub --version 0.8.2 --values /tmp/patch-config.yaml
         test_run jovyan jupyter
         ;;
