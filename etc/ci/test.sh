@@ -32,8 +32,10 @@ function wait_for {
 function test_run {
     wait_for jupyterhub
     url=$(minikube service proxy-public --url | head -n 1)
-    python3 ./etc/ci/selenium_test.py "${HOME}/cached-deps/geckodriver/geckodriver" "${url}" "${1-}" "${2-$(pachctl auth get-otp)}"
-}
+    python3 ./etc/ci/test.py "${url}" \
+        "${1-}" "${2-$(pachctl auth get-otp)}" \
+        --webdriver="${HOME}/cached-deps/geckodriver/geckodriver" \
+        --headless
 
 print_section "Deploy pachyderm"
 deploy_pachyderm
