@@ -53,8 +53,7 @@ fi
 if [ ! -d ~/cached-deps/venv ] ; then
     virtualenv -p python3.7 ~/cached-deps/venv
     source ~/cached-deps/venv/bin/activate
-    # TODO: pin versions?
-    pip3 install selenium
+    pip3 install selenium==3.141.0
 fi
 
 # Variant-specific installations

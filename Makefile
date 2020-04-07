@@ -2,7 +2,7 @@
 
 venv:
 	virtualenv -p python3.7 venv
-	. venv/bin/activate && pip install selenium
+	. venv/bin/activate && pip3 install selenium==3.141.0
 
 test: venv
 	. venv/bin/activate && python3 ./etc/test.py \
