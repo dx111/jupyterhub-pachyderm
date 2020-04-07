@@ -8,14 +8,6 @@ from urllib.parse import urljoin
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 
-MAX_LOAD_COUNT = 10
-
-NOTEBOOK_CODE = """
-import python_pachyderm
-client = python_pachyderm.Client.new_in_cluster()
-client.who_am_i()
-"""
-
 def retry(f, attempts=10, sleep=1.0):
     count = 0
     while count < attempts:
@@ -27,9 +19,15 @@ def retry(f, attempts=10, sleep=1.0):
                 raise
             time.sleep(sleep)
 
-def login(driver, url, username, password):
-    print("login")
+def main(url, username, password, webdriver_path, headless, debug):
+    opts = Options()
+    opts.headless = headless
 
+    if webdriver_path:
+        driver = webdriver.Firefox(executable_path=webdriver_path, options=opts)
+    else:
+        driver = webdriver.Firefox(options=opts)
+    
     driver.get(url)
 
     username_field = driver.find_element_by_id("username_input")
@@ -42,31 +40,6 @@ def login(driver, url, username, password):
     def check_title():
         assert driver.title == "Home Page - Select or create a notebook", "not in the user homepage"
     retry(check_title, attempts=30)
-
-def get_token(driver, url):
-    print("token")
-
-    driver.get(urljoin(url, "/hub/token"))
-
-    def get_token():
-        driver.find_element_by_class_name("btn-jupyter").click()
-        token = driver.find_element_by_id("token-result").get_attribute("innerHTML")
-        assert token, "token not ready yet"
-        return token
-    return retry(get_token)
-
-def main(url, username, password, webdriver_path, headless, debug):
-    opts = Options()
-    opts.headless = headless
-
-    if webdriver_path:
-        driver = webdriver.Firefox(executable_path=webdriver_path, options=opts)
-    else:
-        driver = webdriver.Firefox(options=opts)
-    
-    login(driver, url, username, password)
-    token = get_token(driver, url)
-    print(token)
 
     if not debug:
         driver.quit()
