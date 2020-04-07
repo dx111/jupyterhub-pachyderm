@@ -15,8 +15,7 @@ Tested on these platforms:
 * GKE (kubernetes 1.13)
 * EKS (kubernetes 1.13)
 * Docker for mac (kubernetes 1.14)
-
-This is currently known not to work on kubernetes 1.16-based environments (including minikube.)
+* Minikube, for kubernetes < 1.16
 
 ## Deploying JupyterHub
 
