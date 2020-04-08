@@ -3,8 +3,9 @@
 set -ex
 
 # Install base deps
+sudo add-apt-repository -y ppa:deadsnakes/ppa
 sudo apt-get update
-sudo apt-get install -y -qq jq socat
+sudo apt-get install -y -qq jq socat python3.7
 
 # Install pachctl
 pachyderm_version=$(jq -r .pachctl < version.json)
@@ -37,6 +38,24 @@ if [ ! -f ~/cached-deps/minikube ] ; then
         mv ./minikube ~/cached-deps/minikube
 fi
 
+# Install selenium-related stuff
+if [ ! -d ~/cached-deps/geckodriver ] ; then
+    geckodriver_version=v0.26.0
+    pushd ~/cached-deps
+        wget https://github.com/mozilla/geckodriver/releases/download/${geckodriver_version}/geckodriver-${geckodriver_version}-linux64.tar.gz
+        mkdir geckodriver
+        tar -xzf geckodriver-${geckodriver_version}-linux64.tar.gz -C geckodriver
+    popd
+fi
+/etc/init.d/xvfb start || true
+
+# Setup virtualenv
+if [ ! -d ~/cached-deps/venv ] ; then
+    virtualenv -p python3.7 ~/cached-deps/venv
+    source ~/cached-deps/venv/bin/activate
+    pip3 install selenium==3.141.0
+fi
+
 # Variant-specific installations
 function install_helm {
     if [ ! -f ~/cached-deps/helm ] ; then
@@ -58,9 +77,6 @@ case "${VARIANT}" in
         popd
         ;;
     python)
-        sudo add-apt-repository -y ppa:deadsnakes/ppa
-        sudo apt-get update -y
-        sudo apt-get install -y python3.7
         install_helm
         ;;
     existing)
