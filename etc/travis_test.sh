@@ -74,30 +74,6 @@ case "${VARIANT}" in
             --hub-image "pachyderm/jupyterhub-pachyderm-hub:${image_version}"
         test_run
         ;;
-    python)
-        print_section "Deploy jupyterhub"
-        python3.7 init.py
-        test_run
-
-        print_section "Upgrade jupyterhub"
-        python3.7 init.py
-        test_run
-
-        print_section "Undeploy"
-        ./delete.sh
-
-        print_section "Reset minikube and hostpaths"
-        minikube delete
-        sudo rm -rf /var/pachyderm
-        ./etc/start_minikube.sh
-
-        print_section "Re-deploy pachyderm"
-        deploy_pachyderm
-
-        print_section "Re-deploy jupyterhub"
-        python3.7 init.py
-        test_run
-        ;;
     existing)
         print_section "Create a base deployment of jupyterhub"
         python3 ./etc/existing_config.py base > /tmp/base-config.yaml

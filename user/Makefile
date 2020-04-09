@@ -1,5 +1,5 @@
-PACHCTL_VERSION = $(shell jq -r .pachctl ../../version.json)
-VERSION = $(shell jq -r .jupyterhub_pachyderm ../../version.json)
+PACHCTL_VERSION = $(shell jq -r .pachctl ../version.json)
+VERSION = $(shell jq -r .jupyterhub_pachyderm ../version.json)
 
 .PHONY: docker-build docker-push
 
