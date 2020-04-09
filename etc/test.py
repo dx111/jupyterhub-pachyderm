@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# Runs end-to-end tests on a jupyterhub instance
+
 import sys
 import time
 import argparse
@@ -23,20 +25,27 @@ def main(url, username, password, webdriver_path, headless, debug):
     opts = Options()
     opts.headless = headless
 
+    # create a selenium driver
     if webdriver_path:
         driver = webdriver.Firefox(executable_path=webdriver_path, options=opts)
     else:
         driver = webdriver.Firefox(options=opts)
     
+    # get the jupyterhub login page
     driver.get(url)
 
+    # fill out username/password fields
     username_field = driver.find_element_by_id("username_input")
     username_field.send_keys(username)
     password_field = driver.find_element_by_id("password_input")
     password_field.send_keys(password)
     driver.find_element_by_id("login_submit").click()
 
-    # See if we're on the loading page
+    # Repeatedly check for the title on the jupyter user homepage. We
+    # repeatedly check over a period of 30s because, on the first login,
+    # jupyterhub shows a loading page while the user pod is spun up. We want
+    # to ensure it successfully clears this loading page and gets to the
+    # homepage.
     def check_title():
         assert driver.title == "Home Page - Select or create a notebook", "not in the user homepage"
     retry(check_title, attempts=30)

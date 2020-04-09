@@ -35,6 +35,7 @@ function test_run {
     python3 ./etc/test.py "${url}" "${1-}" "${2-$(pachctl auth get-otp)}" --headless
 }
 
+# Make an initial deployment of pachyderm
 print_section "Deploy pachyderm"
 deploy_pachyderm
 
@@ -42,29 +43,33 @@ case "${VARIANT}" in
     native)
         image_version=$(jq -r .jupyterhub_pachyderm < version.json)
 
+        # Deploy jupyterhub
         print_section "Deploy jupyterhub"
         ${GOPATH}/bin/pachctl deploy jupyterhub \
             --user-image "pachyderm/jupyterhub-pachyderm-user:${image_version}" \
             --hub-image "pachyderm/jupyterhub-pachyderm-hub:${image_version}"
         test_run
 
+        # Re-run jupyterhub deployment, should act as an upgrade and not error
+        # out
         print_section "Upgrade jupyterhub"
         ${GOPATH}/bin/pachctl deploy jupyterhub \
             --user-image "pachyderm/jupyterhub-pachyderm-user:${image_version}" \
             --hub-image "pachyderm/jupyterhub-pachyderm-hub:${image_version}"
         test_run
 
+        # Undeploy everything, including jupyterhub
         print_section "Undeploy"
         echo yes | ${GOPATH}/bin/pachctl undeploy --jupyterhub --metadata
 
+        # Reset minikube fully and re-run the deployment/test cycle. This
+        # ensures that jupyterhub doesn't mistakenly pull in its old PV.
         print_section "Reset minikube"
         minikube delete
-        sudo rm -rf /var/pachyderm
+        sudo rm -rf /var/pachyderm # delete the pachyderm hostpath
         ./etc/start_minikube.sh
-
         print_section "Re-deploy pachyderm"
         deploy_pachyderm
-
         print_section "Re-deploy jupyterhub"
         ${GOPATH}/bin/pachctl deploy jupyterhub \
             --user-image "pachyderm/jupyterhub-pachyderm-user:${image_version}" \
@@ -72,35 +77,42 @@ case "${VARIANT}" in
         test_run
         ;;
     python)
+        # Deploy jupyterhub
         print_section "Deploy jupyterhub"
         python3.7 init.py
         test_run
 
+        # Re-run jupyterhub deployment, should act as an upgrade and not error
+        # out
         print_section "Upgrade jupyterhub"
         python3.7 init.py
         test_run
 
+        # Undeploy jupyterhub
         print_section "Undeploy"
         ./delete.sh
 
+        # Reset minikube fully and re-run the deployment/test cycle. This
+        # ensures that jupyterhub doesn't mistakenly pull in its old PV.
         print_section "Reset minikube and hostpaths"
         minikube delete
-        sudo rm -rf /var/pachyderm
+        sudo rm -rf /var/pachyderm # delete the pachyderm hostpath
         ./etc/start_minikube.sh
-
         print_section "Re-deploy pachyderm"
         deploy_pachyderm
-
         print_section "Re-deploy jupyterhub"
         python3.7 init.py
         test_run
         ;;
     existing)
+        # Create a vanilla jupyterhub deployment, which employs the default
+        # (non-pachyderm) login mechanism
         print_section "Create a base deployment of jupyterhub"
         python3 ./etc/existing_config.py base > /tmp/base-config.yaml
         helm upgrade --install jhub jupyterhub/jupyterhub --version 0.8.2 --values /tmp/base-config.yaml
         wait_for jupyterhub
 
+        # Patch in our custom user image
         print_section "Patch in the user image"
         python3 ./etc/existing_config.py patch > /tmp/patch-config.yaml
         helm upgrade jhub jupyterhub/jupyterhub --version 0.8.2 --values /tmp/patch-config.yaml
