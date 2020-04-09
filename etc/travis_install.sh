@@ -43,11 +43,11 @@ if [ ! -d ~/cached-deps/geckodriver ] ; then
     geckodriver_version=v0.26.0
     pushd ~/cached-deps
         wget https://github.com/mozilla/geckodriver/releases/download/${geckodriver_version}/geckodriver-${geckodriver_version}-linux64.tar.gz
-        mkdir geckodriver
-        tar -xzf geckodriver-${geckodriver_version}-linux64.tar.gz -C geckodriver
+        mkdir geckodriver-${geckodriver_version}
+        tar -xzf geckodriver-${geckodriver_version}-linux64.tar.gz -C geckodriver-${geckodriver_version}
+        mv geckodriver-${geckodriver_version}/geckodriver geckodriver
     popd
 fi
-/etc/init.d/xvfb start || true
 
 # Setup virtualenv
 if [ ! -d ~/cached-deps/venv ] ; then

@@ -12,8 +12,7 @@ cache:
     - ${HOME}/cached-deps
 env:
   global:
-    - PATH=${HOME}/cached-deps:${HOME}/cached-deps/geckodriver:${PATH}
-    - DISPLAY=:99.0
+    - PATH=${HOME}/cached-deps:${PATH}
   matrix:
     - VARIANT=native
     - VARIANT=python
