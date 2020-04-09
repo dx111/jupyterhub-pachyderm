@@ -39,7 +39,7 @@ if [ ! -f ~/cached-deps/minikube ] ; then
 fi
 
 # Install selenium-related stuff
-if [ ! -d ~/cached-deps/geckodriver ] ; then
+if [ ! -f ~/cached-deps/geckodriver ] ; then
     geckodriver_version=v0.26.0
     pushd ~/cached-deps
         wget https://github.com/mozilla/geckodriver/releases/download/${geckodriver_version}/geckodriver-${geckodriver_version}-linux64.tar.gz
