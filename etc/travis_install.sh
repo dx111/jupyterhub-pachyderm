@@ -70,7 +70,7 @@ case "${VARIANT}" in
         # Installs pachctl with native support
         # TODO: remove once native jupyterhub deployments are stable
         pushd ~
-            git clone --single-branch --branch native-jupyterhub --depth 1 https://github.com/pachyderm/pachyderm.git
+            git clone --single-branch --branch master --depth 1 https://github.com/pachyderm/pachyderm.git
             pushd pachyderm
                 make install
             popd
