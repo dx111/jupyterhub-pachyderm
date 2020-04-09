@@ -26,4 +26,4 @@ auth:
       global_password: "{some random string}"
 ```
 
-You'll want to use that as your Helm `config.yaml` when setting up JupyterHub.
+Modify it with whatever customizations you wish, then use `helm install` or `helm upgrade` with that config to install JupyterHub.
