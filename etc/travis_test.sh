@@ -120,7 +120,7 @@ case "${VARIANT}" in
 
         wait_for jupyterhub
         url=$(minikube service proxy-public --url | head -n 1)
-        python3 ./etc/test_e2e.py "${url}" "jovyan" "jupyter" --headless
+        python3 ./etc/test_e2e.py "${url}" "jovyan" "jupyter" --headless --no-auth-check
         ;;
     *)
         echo "Unknown testing variant"
