@@ -31,6 +31,28 @@ def retry(f, attempts=10, sleep=1.0):
                 raise
             time.sleep(sleep)
 
+async def run_command(ws, cmd, timeout=1.0):
+    await ws.send(json.dumps(["stdin", "{}\r\n".format(cmd)]))
+    await ws.recv() # ignore command being echoed back
+
+    start_time = time.time()
+    lines = []
+
+    while time.time() - start_time < timeout:
+        try:
+            line = await asyncio.wait_for(ws.recv(), timeout=timeout)
+        except asyncio.TimeoutError:
+            pass
+        else:
+            lines.append(json.loads(line))
+
+    return lines
+
+def check_stdout(pattern, lines):
+    stdout = "".join([l for (io, l) in lines if io == 'stdout'])
+    assert pattern.search(stdout) is not None, \
+        "unexpected terminal output\n{}".format(json.dumps(lines, indent=2))
+
 def login(driver, url, username, password):
     print("login")
 
@@ -65,23 +87,6 @@ def get_token(driver, url):
         return token
     return retry(get_token)
 
-async def run_command(ws, cmd, timeout=1.0):
-    await ws.send(json.dumps(["stdin", "{}\r\n".format(cmd)]))
-    await ws.recv() # ignore command being echoed back
-
-    start_time = time.time()
-    lines = []
-
-    while time.time() - start_time < timeout:
-        try:
-            line = await asyncio.wait_for(ws.recv(), timeout=timeout)
-        except asyncio.TimeoutError:
-            pass
-        else:
-            lines.append(json.loads(line))
-
-    return lines
-
 async def test_terminal(url, token):
     res = requests.request("POST", urljoin(url, "/user/github%3Aadmin/api/terminals"), data=dict(token=token))
     res.raise_for_status()
@@ -95,15 +100,11 @@ async def test_terminal(url, token):
         
         print("pachctl")
         lines = await run_command(ws, "pachctl auth whoami")
-        stdout = "".join([l for (io, l) in lines if io == 'stdout'])
-        assert PACHCTL_LOGIN_PATTERN.search(stdout) is not None, \
-            "unexpected terminal output\n{}".format(json.dumps(lines, indent=2))
+        check_stdout(PACHCTL_LOGIN_PATTERN, lines)
 
         print("python_pachyderm")
         lines = await run_command(ws, "python3 -c 'import python_pachyderm; c = python_pachyderm.Client.new_in_cluster(); print(c.who_am_i())'")
-        stdout = "".join([l for (io, l) in lines if io == 'stdout'])
-        assert PYTHON_LOGIN_PATTERN.search(stdout) is not None, \
-            "unexpected terminal output\n{}".format(json.dumps(lines, indent=2))
+        check_stdout(PYTHON_LOGIN_PATTERN, lines)
 
 def main(url, username, password, webdriver_path, headless, debug):
     opts = Options()
