@@ -8,7 +8,7 @@ import json
 import time
 import asyncio
 import argparse
-from urllib.parse import urljoin
+from urllib.parse import urljoin, quote as urlquote
 
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
@@ -17,8 +17,10 @@ import websockets
 
 MAX_LOAD_COUNT = 10
 
-PACHCTL_LOGIN_PATTERN = re.compile(r'You are "github:admin"\r\nsession expires: (.+)\r\nYou are an administrator of this Pachyderm cluster\r\n', re.MULTILINE)
-PYTHON_LOGIN_PATTERN = re.compile(r'username: \"github:admin\"')
+PACHCTL_WHOAMI_PATTERN = re.compile(r'You are ".+"\nsession expires: .+\nYou are an administrator of this Pachyderm cluster\n', re.MULTILINE)
+PYTHON_WHOAMI_PATTERN = re.compile(r'username: \".+\"')
+PACHCTL_VERSION_PATTERN = re.compile(r'COMPONENT +VERSION +\npachctl', re.MULTILINE)
+PYTHON_VERSION_PATTERN = re.compile(r'major: (\d+)\nminor: (\d+)', re.MULTILINE)
 
 def retry(f, attempts=10, sleep=1.0):
     count = 0
@@ -46,12 +48,14 @@ async def run_command(ws, cmd, timeout=1.0):
         else:
             lines.append(json.loads(line))
 
-    return lines
+    for (stdio, _) in lines:
+        assert stdio == "stdout"
+
+    return "".join(l.replace("\r\n", "\n") for (_, l) in lines)
 
 def check_stdout(pattern, lines):
-    stdout = "".join([l for (io, l) in lines if io == 'stdout'])
-    assert pattern.search(stdout) is not None, \
-        "unexpected terminal output\n{}".format(json.dumps(lines, indent=2))
+    assert pattern.search(lines) is not None, \
+        "unexpected terminal output:\n{}".format(lines)
 
 def login(driver, url, username, password):
     print("login")
@@ -87,26 +91,35 @@ def get_token(driver, url):
         return token
     return retry(get_token)
 
-async def test_terminal(url, token):
-    res = requests.request("POST", urljoin(url, "/user/github%3Aadmin/api/terminals"), data=dict(token=token))
+async def test_terminal(url, token, username, no_auth_check):
+    res = requests.request("POST", urljoin(url, "/user/{}/api/terminals".format(urlquote(username))), data=dict(token=token))
     res.raise_for_status()
     term_name = res.json()["name"]
 
-    ws_url = urljoin(url, "/user/github%3Aadmin/terminals/websocket/{}?token={}".format(term_name, token))
+    ws_url = urljoin(url, "/user/{}/terminals/websocket/{}?token={}".format(urlquote(username), urlquote(term_name), urlquote(token)))
     ws_url = ws_url.replace("http://", "ws://")
     ws_url = ws_url.replace("https://", "wss://")
     async with websockets.connect(ws_url) as ws:
         await ws.recv() # ignore setup message
+
+        print("pachctl version")
+        lines = await run_command(ws, "pachctl version")
+        check_stdout(PACHCTL_VERSION_PATTERN, lines)
+
+        print("python_pachyderm version")
+        lines = await run_command(ws, "python3 -c 'import python_pachyderm; c = python_pachyderm.Client.new_in_cluster(); print(c.get_remote_version())'")
+        check_stdout(PYTHON_VERSION_PATTERN, lines)
         
-        print("pachctl")
-        lines = await run_command(ws, "pachctl auth whoami")
-        check_stdout(PACHCTL_LOGIN_PATTERN, lines)
+        if not no_auth_check:
+            print("pachctl whoami")
+            lines = await run_command(ws, "pachctl auth whoami")
+            check_stdout(PACHCTL_WHOAMI_PATTERN, lines)
 
-        print("python_pachyderm")
-        lines = await run_command(ws, "python3 -c 'import python_pachyderm; c = python_pachyderm.Client.new_in_cluster(); print(c.who_am_i())'")
-        check_stdout(PYTHON_LOGIN_PATTERN, lines)
+            print("python_pachyderm whoami")
+            lines = await run_command(ws, "python3 -c 'import python_pachyderm; c = python_pachyderm.Client.new_in_cluster(); print(c.who_am_i())'")
+            check_stdout(PYTHON_WHOAMI_PATTERN, lines)
 
-def main(url, username, password, webdriver_path, headless, debug):
+def main(url, username, password, webdriver_path, headless, debug, no_auth_check):
     opts = Options()
     opts.headless = headless
 
@@ -118,7 +131,7 @@ def main(url, username, password, webdriver_path, headless, debug):
     
     login(driver, url, username, password)
     token = get_token(driver, url)
-    asyncio.run(test_terminal(url, token))
+    asyncio.run(test_terminal(url, token, username, no_auth_check))
 
     if not debug:
         driver.quit()
@@ -131,6 +144,7 @@ if __name__ == '__main__':
     parser.add_argument("--webdriver", help="path to webdriver executable")
     parser.add_argument("--headless", action="store_true", help="headless mode")
     parser.add_argument("--debug", action="store_true", help="debug mode")
+    parser.add_argument("--no-auth-check", action="store_true", help="Disable auth-related tests")
     args = parser.parse_args()
 
-    main(args.url, args.username, args.password, args.webdriver, args.headless, args.debug)
+    main(args.url, args.username, args.password, args.webdriver, args.headless, args.debug, args.no_auth_check)
