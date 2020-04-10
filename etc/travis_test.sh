@@ -35,6 +35,13 @@ function test_run {
     python3 ./etc/test_e2e.py "${url}" "${1-}" "${2-$(pachctl auth get-otp)}" --headless
 }
 
+# Deletes and restarts minikube
+function reset_minikube {
+    minikube delete
+    sudo rm -rf /var/pachyderm # delete the pachyderm hostpath
+    ./etc/start_minikube.sh
+}
+
 # Make an initial deployment of pachyderm
 print_section "Deploy pachyderm"
 deploy_pachyderm
@@ -64,10 +71,7 @@ case "${VARIANT}" in
 
         # Reset minikube fully and re-run the deployment/test cycle. This
         # ensures that jupyterhub doesn't mistakenly pull in its old PV.
-        print_section "Reset minikube"
-        minikube delete
-        sudo rm -rf /var/pachyderm # delete the pachyderm hostpath
-        ./etc/start_minikube.sh
+        reset_minikube
         print_section "Re-deploy pachyderm"
         deploy_pachyderm
         print_section "Re-deploy jupyterhub"
@@ -94,10 +98,7 @@ case "${VARIANT}" in
 
         # Reset minikube fully and re-run the deployment/test cycle. This
         # ensures that jupyterhub doesn't mistakenly pull in its old PV.
-        print_section "Reset minikube and hostpaths"
-        minikube delete
-        sudo rm -rf /var/pachyderm # delete the pachyderm hostpath
-        ./etc/start_minikube.sh
+        reset_minikube
         print_section "Re-deploy pachyderm"
         deploy_pachyderm
         print_section "Re-deploy jupyterhub"
