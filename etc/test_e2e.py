@@ -2,21 +2,23 @@
 
 # Runs end-to-end tests on a jupyterhub instance
 
+import re
 import sys
+import json
 import time
+import asyncio
 import argparse
 from urllib.parse import urljoin
 
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
+import requests
+import websockets
 
 MAX_LOAD_COUNT = 10
 
-NOTEBOOK_CODE = """
-import python_pachyderm
-client = python_pachyderm.Client.new_in_cluster()
-client.who_am_i()
-"""
+PACHCTL_LOGIN_PATTERN = re.compile(r'You are "github:admin"\r\nsession expires: (.+)\r\nYou are an administrator of this Pachyderm cluster\r\n', re.MULTILINE)
+PYTHON_LOGIN_PATTERN = re.compile(r'username: \"github:admin\"')
 
 def retry(f, attempts=10, sleep=1.0):
     count = 0
@@ -63,10 +65,45 @@ def get_token(driver, url):
         return token
     return retry(get_token)
 
-def test_pachctl(url, token):
-    print("pachctl")
+async def run_command(ws, cmd, timeout=1.0):
+    await ws.send(json.dumps(["stdin", "{}\r\n".format(cmd)]))
+    await ws.recv() # ignore command being echoed back
 
-    
+    start_time = time.time()
+    lines = []
+
+    while time.time() - start_time < timeout:
+        try:
+            line = await asyncio.wait_for(ws.recv(), timeout=timeout)
+        except asyncio.TimeoutError:
+            pass
+        else:
+            lines.append(json.loads(line))
+
+    return lines
+
+async def test_terminal(url, token):
+    res = requests.request("POST", urljoin(url, "/user/github%3Aadmin/api/terminals"), data=dict(token=token))
+    res.raise_for_status()
+    term_name = res.json()["name"]
+
+    ws_url = urljoin(url, "/user/github%3Aadmin/terminals/websocket/{}?token={}".format(term_name, token))
+    ws_url = ws_url.replace("http://", "ws://")
+    ws_url = ws_url.replace("https://", "wss://")
+    async with websockets.connect(ws_url) as ws:
+        await ws.recv() # ignore setup message
+        
+        print("pachctl")
+        lines = await run_command(ws, "pachctl auth whoami")
+        stdout = "".join([l for (io, l) in lines if io == 'stdout'])
+        assert PACHCTL_LOGIN_PATTERN.search(stdout) is not None, \
+            "unexpected terminal output\n{}".format(json.dumps(lines, indent=2))
+
+        print("python_pachyderm")
+        lines = await run_command(ws, "python3 -c 'import python_pachyderm; c = python_pachyderm.Client.new_in_cluster(); print(c.who_am_i())'")
+        stdout = "".join([l for (io, l) in lines if io == 'stdout'])
+        assert PYTHON_LOGIN_PATTERN.search(stdout) is not None, \
+            "unexpected terminal output\n{}".format(json.dumps(lines, indent=2))
 
 def main(url, username, password, webdriver_path, headless, debug):
     opts = Options()
@@ -80,7 +117,7 @@ def main(url, username, password, webdriver_path, headless, debug):
     
     login(driver, url, username, password)
     token = get_token(driver, url)
-    test_pachctl(url, token)
+    asyncio.run(test_terminal(url, token))
 
     if not debug:
         driver.quit()

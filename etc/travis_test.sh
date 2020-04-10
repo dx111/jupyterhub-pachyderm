@@ -32,7 +32,7 @@ function wait_for {
 function test_run {
     wait_for jupyterhub
     url=$(minikube service proxy-public --url | head -n 1)
-    python3 ./etc/test.py "${url}" "${1-}" "${2-$(pachctl auth get-otp)}" --headless
+    python3 ./etc/test_e2e.py "${url}" "${1-}" "${2-$(pachctl auth get-otp)}" --headless
 }
 
 # Make an initial deployment of pachyderm
