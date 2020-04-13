@@ -27,7 +27,7 @@ def retry(f, attempts=10, sleep=1.0):
     while count < attempts:
         try:
             return f()
-        except AssertionError:
+        except:
             count += 1
             if count >= attempts:
                 raise
