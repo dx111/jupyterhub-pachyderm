@@ -23,6 +23,10 @@ PACHCTL_VERSION_PATTERN = re.compile(r'COMPONENT +VERSION +\npachctl', re.MULTIL
 PYTHON_VERSION_PATTERN = re.compile(r'major: (\d+)\nminor: (\d+)', re.MULTILINE)
 
 def retry(f, attempts=10, sleep=1.0):
+    """
+    Repeatedly retries an operation, ignore exceptions, n times with a given
+    sleep between runs.
+    """
     count = 0
     while count < attempts:
         try:
@@ -34,6 +38,10 @@ def retry(f, attempts=10, sleep=1.0):
             time.sleep(sleep)
 
 async def run_command(ws, cmd, timeout=1.0):
+    """
+    Runs a command in a terminal session available on a websocket connection
+    """
+
     await ws.send(json.dumps(["stdin", "{}\r\n".format(cmd)]))
     await ws.recv() # ignore command being echoed back
 
@@ -48,16 +56,22 @@ async def run_command(ws, cmd, timeout=1.0):
         else:
             lines.append(json.loads(line))
 
-    for (stdio, _) in lines:
-        assert stdio == "stdout"
+    # seems to always be true, even when stderr is printed to instead
+    assert all(stdio == "stdout" for (stdio, _) in lines)
 
     return "".join(l.replace("\r\n", "\n") for (_, l) in lines)
 
 def check_stdout(pattern, lines):
+    """
+    Verifies terminal stdout against a given regex
+    """
     assert pattern.search(lines) is not None, \
         "unexpected terminal output:\n{}".format(lines)
 
 def login(driver, url, username, password):
+    """
+    Tests for successful login using selenium
+    """
     print("login")
 
     # get the jupyterhub login page
@@ -70,16 +84,18 @@ def login(driver, url, username, password):
     password_field.send_keys(password)
     driver.find_element_by_id("login_submit").click()
 
-    # Repeatedly check for the title on the jupyter user homepage. We
-    # repeatedly check over a period of 30s because, on the first login,
-    # jupyterhub shows a loading page while the user pod is spun up. We want
-    # to ensure it successfully clears this loading page and gets to the
-    # homepage.
+    # Repeatedly check for the title on the jupyter user homepage. We check
+    # over a period of 30s because, on the first login, jupyterhub shows a
+    # loading page while the user pod is spun up. We want to ensure it
+    # successfully clears this loading page and gets to the homepage.
     def check_title():
         assert driver.title == "Home Page - Select or create a notebook", "not in the user homepage"
     retry(check_title, attempts=30)
 
 def get_token(driver, url):
+    """
+    Using selenium, this extracts an API token
+    """
     print("token")
 
     driver.get(urljoin(url, "/hub/token"))
@@ -92,29 +108,45 @@ def get_token(driver, url):
     return retry(get_token)
 
 async def test_terminal(url, token, username, no_auth_check):
+    """
+    Tests that it's possible to start a Jupyter terminal session, and that
+    expected dependencies are installed
+    """
+
+    # Start a terminal session
     res = requests.request("POST", urljoin(url, "/user/{}/api/terminals".format(urlquote(username))), data=dict(token=token))
     res.raise_for_status()
     term_name = res.json()["name"]
 
+    # Use Jupyter's undocumented API for interacting with the terminal
+    # session.
+    # 1) Determine the websocket URL for the terminal session
     ws_url = urljoin(url, "/user/{}/terminals/websocket/{}?token={}".format(urlquote(username), urlquote(term_name), urlquote(token)))
     ws_url = ws_url.replace("http://", "ws://")
     ws_url = ws_url.replace("https://", "wss://")
-    async with websockets.connect(ws_url) as ws:
-        await ws.recv() # ignore setup message
 
+    # 2) Connect with websockets
+    async with websockets.connect(ws_url) as ws:
+        # 3) Ignore the setup message
+        await ws.recv()
+
+        # 4) Check that `pachctl` is installed
         print("pachctl version")
         lines = await run_command(ws, "pachctl version")
         check_stdout(PACHCTL_VERSION_PATTERN, lines)
 
+        # 5) Check that python_pachyderm is installed
         print("python_pachyderm version")
         lines = await run_command(ws, "python3 -c 'import python_pachyderm; c = python_pachyderm.Client.new_in_cluster(); print(c.get_remote_version())'")
         check_stdout(PYTHON_VERSION_PATTERN, lines)
         
         if not no_auth_check:
+            # 6) Check that we're authenticated in `pachctl`
             print("pachctl whoami")
             lines = await run_command(ws, "pachctl auth whoami")
             check_stdout(PACHCTL_WHOAMI_PATTERN, lines)
 
+            # 7) Check that we're authenticated in python_pachyderm
             print("python_pachyderm whoami")
             lines = await run_command(ws, "python3 -c 'import python_pachyderm; c = python_pachyderm.Client.new_in_cluster(); print(c.who_am_i())'")
             check_stdout(PYTHON_WHOAMI_PATTERN, lines)
@@ -129,6 +161,7 @@ def main(url, username, password, webdriver_path, headless, debug, no_auth_check
     else:
         driver = webdriver.Firefox(options=opts)
     
+    # run tests
     login(driver, url, username, password)
     token = get_token(driver, url)
     asyncio.run(test_terminal(url, token, username, no_auth_check))
