@@ -57,6 +57,54 @@ Notice that, without configuration:
 
 For a more advanced example, see our [opencv walkthrough](doc/opencv.md).
 
+## Developer Guide
+
+### Overview
+
+jupyterhub-pachyderm builds off of helm 3 and
+[zero-to-jupyterhub](https://zero-to-jupyterhub.readthedocs.io/en/latest/),
+and adds three components for streamining Pachyderm<->JupyterHub interaction:
+
+* Scripts for installing/uninstalling pachyderm-jupyterhub on a k8s cluster (`init.py` and `delete.sh`)
+* The JupyterHub image, which runs the JupyterHub authenticator (`images/hub`)
+* The Jupyter user image (`images/user`)
+
+Everything else in this repo acts as support for these three components -
+largely docs and CI.
+
+### Code Layout
+
+Code layout, as of 4/20:
+
+```
+.
+├── delete.sh - script for deleting an installation
+├── doc - documentation
+├── etc - utility scripts, mostly used in CI
+│   ├── check_ready.sh - script to check if a pod is ready
+│   ├── existing_config.py - script for generating helm configs for CI
+│   ├── push-to-minikube.sh - script for pushing images to minikube
+│   ├── start_minikube.sh - script for starting minikube
+│   ├── test.py - runner for end-to-end tests
+│   ├── travis_install.sh - handles the installation phase in TravisCI
+│   ├── travis_setup.sh - handles the setup phase in TravisCI
+│   └── travis_test.sh - handles the test phase in TravisCI
+├── images - docker images used in jupyterhub-pachyderm
+│   ├── hub - the JupyterHub image
+│   │   ├── authenticator - python package for authenticating users
+│   │   ├── Dockerfile - dockerfile for building the hub image
+│   │   └── Makefile - targets for building/pushing the hub image
+│   └── user - the Jupyter image for individual users
+│       ├── config.sh - called when a user logs into JupyterHub via the pachyderm authenticator, to automatically configure `pachctl` in the user environment
+│       ├── Dockerfile - dockerfile for building the user image
+│       └── Makefile - targets for building/pushing the user image
+├── init.py - script for creating a JupyterHub installation
+├── LICENSE - the license
+├── Makefile - targets developers can run
+├── README.md - the readme
+└── version.json - specifies the version of jupyterhub-pachyderm and its dependencies
+```
+
 ## Troubleshooting
 
 ### Cannot reach JupyterHub

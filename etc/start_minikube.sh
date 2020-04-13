@@ -28,13 +28,3 @@ while true; do
     minikube delete
     sleep 10 # Wait for minikube to go completely down
 done
-
-# Deploy pachyderm
-pachctl deploy local -d
-until timeout 1s ./etc/ci/check_ready.sh app=pachd; do sleep 1; done
-pachctl version
-
-# Enable enterprise & auth
-pachctl enterprise activate "${PACH_ENTERPRISE_CODE}"
-echo admin | pachctl auth activate
-pachctl auth whoami

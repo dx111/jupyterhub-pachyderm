@@ -12,19 +12,22 @@ cache:
     - ${HOME}/cached-deps
 env:
   global:
-    - PATH=$HOME/cached-deps:$PATH
+    - PATH=${HOME}/cached-deps:${PATH}
   matrix:
     - VARIANT=native
-    - VARIANT=init
+    - VARIANT=python
+    - VARIANT=existing
 
 install:
-- ./etc/ci/install.sh
+- ./etc/travis_install.sh
 before_script:
-- ./etc/ci/setup.sh
+- ./etc/travis_setup.sh
 script:
-- ./etc/ci/test.sh
+- ./etc/travis_test.sh
 
 after_failure:
+- firefox -v
+- geckodriver --version
 - kubectl version
 - kubectl get all
 - kubectl describe pod -l app=pachd
