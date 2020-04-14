@@ -12,5 +12,5 @@ docker-push: docker-build
 dev-build:
 	jlpm watch
 
-server:
+dev-server:
 	jupyter lab --watch
