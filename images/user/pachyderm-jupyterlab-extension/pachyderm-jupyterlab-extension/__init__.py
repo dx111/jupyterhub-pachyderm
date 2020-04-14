@@ -16,4 +16,4 @@ def load_jupyter_server_extension(nb_app):
         Notebook application instance
     """
     setup_handlers(nb_app.web_app)
-    nb_app.log.info(f'Registered HelloWorld extension at URL path /pachyderm')
+    nb_app.log.info(f'Registered Pachyderm extension at URL path /pachyderm')
