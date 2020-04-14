@@ -253,8 +253,7 @@ if __name__ == "__main__":
         jupyterhub_version = j["jupyterhub"]
         hub_image_version = j["hub_image"]
         user_image_version = j["user_image"]
-
-def main(debug, no_verify_contexts, dry_run, tls_host, tls_email, legacy_ui, jupyterhub_version, hub_image_version, user_image_version):
+    
     try:
         main(
             args.debug,
