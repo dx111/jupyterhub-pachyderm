@@ -1,7 +1,7 @@
 PACHCTL_VERSION = $(shell jq -r .pachctl ../../version.json)
 VERSION = $(shell jq -r .user_image ../../version.json)
 
-.PHONY: docker-build docker-push dev-build server
+.PHONY: docker-build docker-push dev-build dev-server
 
 docker-build:
 	docker build --build-arg PACHCTL_VERSION=$(PACHCTL_VERSION) --tag pachyderm/jupyterhub-pachyderm-user:$(VERSION) .
