@@ -32,7 +32,7 @@ class DAGHandler(APIHandler):
         if "PACHD_SERVICE_HOST" in os.environ and "PACHD_SERVICE_PORT" in os.environ:
             client = python_pachyderm.Client.new_in_cluster()
         else:
-            client = python_pachyderm.Client()
+            client = python_pachyderm.Client().new_from_pachd_address('http://192.168.99.100:30650')
 
         g = []
         pipeline_names = set()
