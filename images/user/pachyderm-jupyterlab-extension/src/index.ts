@@ -7,8 +7,6 @@ import { ICommandPalette, MainAreaWidget } from '@jupyterlab/apputils';
 import { Terminal } from '@jupyterlab/terminal/lib/widget';
 import { terminalIcon } from '@jupyterlab/ui-components';
 
-import { DAGWidget } from './dag';
-
 /**
  * Initialization data for the pachyderm-jupyterlab-extension extension.
  */
@@ -43,11 +41,6 @@ const extension: JupyterFrontEndPlugin<void> = {
     const pachydermMenu: Menu = new Menu({ commands });
     pachydermMenu.title.label = 'Pachyderm';
     mainMenu.addMenu(pachydermMenu, { rank: 80 });
-
-    addAction('pachyderm:dag-viewer', 'DAG', (args) => {
-      const widget = new DAGWidget();
-      app.shell.add(widget, 'main');
-    });
     
     addAction('pachyderm:shell', 'Shell', async (args) => {
       // adapted from
