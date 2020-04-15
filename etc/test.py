@@ -47,7 +47,7 @@ def main(url, username, password, webdriver_path, headless, debug):
     # to ensure it successfully clears this loading page and gets to the
     # homepage.
     def check_title():
-        assert driver.title == "Home Page - Select or create a notebook", "unexpected page title: {}".format(driver.title)
+        assert driver.title == "JupyterLab", "unexpected page title: {}".format(driver.title)
     retry(check_title, attempts=60)
 
     if not debug:
