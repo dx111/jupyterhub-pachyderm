@@ -4,7 +4,6 @@ set -ex
 
 minikube_args=(
     "--vm-driver=none"
-    "--kubernetes-version=v1.13.0"
 )
 
 # Repeatedly restart minikube until it comes up. This corrects for an issue in
