@@ -5,7 +5,7 @@ set -ex
 # Install base deps
 sudo add-apt-repository -y ppa:deadsnakes/ppa
 sudo apt-get update
-sudo apt-get install -y -qq jq socat python3.7
+sudo apt-get install -y -qq jq socat python3.7 conntrack
 
 # Install pachctl
 pachyderm_version=$(jq -r .pachctl < version.json)
