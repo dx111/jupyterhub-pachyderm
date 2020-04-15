@@ -1,4 +1,4 @@
-{% extends "page.html" %}
+{% extends "templates/page.html" %}
 {% if announcement_login %}
   {% set announcement = announcement_login %}
 {% endif %}
@@ -36,11 +36,13 @@
     </p>
     {% endif %}
 
-    <a
-      class="btn" target="_blank"
-      href="http://github.com/login/oauth/authorize?client_id=d3481e92b4f09ea74ff8&redirect_uri=https://pachyderm.io/login-hook/display-token.html">
-      Get GitHub Token
-    </a>
+    <p class="text-center">
+      <a
+        class="btn btn-jupyter" target="_blank"
+        href="http://github.com/login/oauth/authorize?client_id=d3481e92b4f09ea74ff8&redirect_uri=https://pachyderm.io/login-hook/display-token.html">
+        Get GitHub Token
+      </a>
+    </p>
 
     <p>
       Connect to Pachyderm using your GitHub account: you'll need to paste the token provided into the box below

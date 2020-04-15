@@ -19,6 +19,9 @@ hub:
   image:
     name: pachyderm/jupyterhub-pachyderm-hub
     tag: "{version}"
+  extraConfig:
+    templates: |
+      c.JupyterHub.template_paths = ["/app/templates"]
 singleuser:
   image:
     name: pachyderm/jupyterhub-pachyderm-user
