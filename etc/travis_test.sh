@@ -28,11 +28,18 @@ function wait_for {
     until timeout 1s ./etc/check_ready.sh app=$1; do sleep 1; done
 }
 
-# Executes a test run
-function test_run {
+# Executes a test run with pachyderm auth
+function test_run_with_auth {
     wait_for jupyterhub
     url=$(minikube service proxy-public --url | head -n 1)
-    python3 ./etc/test.py "${url}" "${1-}" "${2-$(pachctl auth get-otp)}" --headless
+    python3 ./etc/test_e2e.py "${url}" "github:admin" "$(pachctl auth get-otp)" --headless
+}
+
+# Deletes and restarts minikube
+function reset_minikube {
+    minikube delete
+    sudo rm -rf /var/pachyderm # delete the pachyderm hostpath
+    ./etc/start_minikube.sh
 }
 
 # Make an initial deployment of pachyderm
@@ -48,7 +55,7 @@ case "${VARIANT}" in
         ${GOPATH}/bin/pachctl deploy jupyterhub \
             --user-image "pachyderm/jupyterhub-pachyderm-user:${image_version}" \
             --hub-image "pachyderm/jupyterhub-pachyderm-hub:${image_version}"
-        test_run
+        test_run_with_auth
 
         # Re-run jupyterhub deployment, should act as an upgrade and not error
         # out
@@ -56,7 +63,7 @@ case "${VARIANT}" in
         ${GOPATH}/bin/pachctl deploy jupyterhub \
             --user-image "pachyderm/jupyterhub-pachyderm-user:${image_version}" \
             --hub-image "pachyderm/jupyterhub-pachyderm-hub:${image_version}"
-        test_run
+        test_run_with_auth
 
         # Undeploy everything, including jupyterhub
         print_section "Undeploy"
@@ -64,29 +71,26 @@ case "${VARIANT}" in
 
         # Reset minikube fully and re-run the deployment/test cycle. This
         # ensures that jupyterhub doesn't mistakenly pull in its old PV.
-        print_section "Reset minikube"
-        minikube delete
-        sudo rm -rf /var/pachyderm # delete the pachyderm hostpath
-        ./etc/start_minikube.sh
+        reset_minikube
         print_section "Re-deploy pachyderm"
         deploy_pachyderm
         print_section "Re-deploy jupyterhub"
         ${GOPATH}/bin/pachctl deploy jupyterhub \
             --user-image "pachyderm/jupyterhub-pachyderm-user:${image_version}" \
             --hub-image "pachyderm/jupyterhub-pachyderm-hub:${image_version}"
-        test_run
+        test_run_with_auth
         ;;
     python)
         # Deploy jupyterhub
         print_section "Deploy jupyterhub"
         python3.7 init.py
-        test_run
+        test_run_with_auth
 
         # Re-run jupyterhub deployment, should act as an upgrade and not error
         # out
         print_section "Upgrade jupyterhub"
         python3.7 init.py
-        test_run
+        test_run_with_auth
 
         # Undeploy jupyterhub
         print_section "Undeploy"
@@ -94,15 +98,12 @@ case "${VARIANT}" in
 
         # Reset minikube fully and re-run the deployment/test cycle. This
         # ensures that jupyterhub doesn't mistakenly pull in its old PV.
-        print_section "Reset minikube and hostpaths"
-        minikube delete
-        sudo rm -rf /var/pachyderm # delete the pachyderm hostpath
-        ./etc/start_minikube.sh
+        reset_minikube
         print_section "Re-deploy pachyderm"
         deploy_pachyderm
         print_section "Re-deploy jupyterhub"
         python3.7 init.py
-        test_run
+        test_run_with_auth
         ;;
     existing)
         # Create a vanilla jupyterhub deployment, which employs the default
@@ -116,7 +117,10 @@ case "${VARIANT}" in
         print_section "Patch in the user image"
         python3 ./etc/existing_config.py patch > /tmp/patch-config.yaml
         helm upgrade jhub jupyterhub/jupyterhub --version 0.8.2 --values /tmp/patch-config.yaml
-        test_run jovyan jupyter
+
+        wait_for jupyterhub
+        url=$(minikube service proxy-public --url | head -n 1)
+        python3 ./etc/test_e2e.py "${url}" "jovyan" "jupyter" --headless --no-auth-check
         ;;
     *)
         echo "Unknown testing variant"

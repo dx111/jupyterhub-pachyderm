@@ -52,9 +52,9 @@ fi
 # Setup virtualenv
 if [ ! -d ~/cached-deps/venv ] ; then
     virtualenv -p python3.7 ~/cached-deps/venv
-    source ~/cached-deps/venv/bin/activate
-    pip3 install selenium==3.141.0
 fi
+source ~/cached-deps/venv/bin/activate
+pip3 install -r etc/test_requirements.txt
 
 # Variant-specific installations
 function install_helm {
