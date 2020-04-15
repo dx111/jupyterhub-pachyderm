@@ -80,13 +80,13 @@ case "${VARIANT}" in
     python)
         # Deploy jupyterhub
         print_section "Deploy jupyterhub"
-        python3.7 init.py
+        python3.7 init.py --legacy-ui
         test_run
 
         # Re-run jupyterhub deployment, should act as an upgrade and not error
         # out
         print_section "Upgrade jupyterhub"
-        python3.7 init.py
+        python3.7 init.py --legacy-ui
         test_run
 
         # Undeploy jupyterhub
@@ -102,7 +102,7 @@ case "${VARIANT}" in
         print_section "Re-deploy pachyderm"
         deploy_pachyderm
         print_section "Re-deploy jupyterhub"
-        python3.7 init.py
+        python3.7 init.py --legacy-ui
         test_run
         ;;
     existing)
