@@ -1,6 +1,6 @@
 import React, { useRef, FunctionComponent, useEffect } from 'react';
+import dagreD3 from 'dagre-d3';
 import * as d3 from 'd3';
-import * as d3Dag from 'd3-dag';
 
 type DagProps = {
     data: any;
@@ -8,124 +8,61 @@ type DagProps = {
     width: number;
 }
 
-
 const Dag: FunctionComponent<DagProps> = ({width, height, data}) => {
-    const nodeRadius = 20;
-    const dagProcessor = d3Dag.dagStratify();
-    const container = useRef(null);
+  const container = useRef(null);
+  const dag = useRef(null);
+  const render = dagreD3.render();
 
-    useEffect(() => {
-        if(!data || !container.current) return;
-        console.log(data);
+  useEffect(() => {
+    if(!data || !container.current || !dag.current) return
+    const inner = d3.select(dag.current);
+    const svg = d3.select(container.current);
 
-    const svgNode = d3.select(container.current)
-
-  
-    const viewbox = [-nodeRadius, -nodeRadius, width + 2 * nodeRadius, height + 2 * nodeRadius];
-    svgNode.attr("viewbox", viewbox.join(" "));
-  
-    const dag = dagProcessor(data);
-  
-    const defs = svgNode.append('defs'); // For gradients
-    
-    const layout = d3Dag.sugiyama()
-      .size([width, height])
-      .layering(d3Dag.layeringTopological())
-      .decross(d3Dag.decrossOpt())
-      .coord(d3Dag.coordCenter());
-    layout(dag);
-    
-    const steps = dag.size();
-    const interp = d3.interpolateRainbow;
-    const colorMap: object = {};
-    dag.each((node: any, i: number) => {
-      colorMap[node.id] = interp(i / steps);
+    // set up zoom
+    const zoom = d3.zoom().on("zoom", function() {
+      inner.attr("transform", d3.event.transform);
     });
+    svg.call(zoom);
     
-    // How to draw edges
-    const line = d3.line()
-      .curve(d3.curveCatmullRom)
-      .x(d => d.x)
-      .y(d => d.y);
-      
-    // Plot edges
-    svgNode.append('g')
-      .selectAll('path')
-      .data(dag.links())
-      .enter()
-      .append('path')
-      .attr('d', ({ data }) => line(data.points))
-      .attr('fill', 'none')
-      .attr('stroke-width', 3)
-      .attr('stroke', ({source, target}) => {
-        const gradId = `${source.id}-${target.id}`;
-        const grad = defs.append('linearGradient')
-          .attr('id', gradId)
-          .attr('gradientUnits', 'userSpaceOnUse')
-          .attr('x1', source.x)
-          .attr('x2', target.x)
-          .attr('y1', source.y)
-          .attr('y2', target.y);
-        grad.append('stop').attr('offset', '0%').attr('stop-color', colorMap[source.id]);
-        grad.append('stop').attr('offset', '100%').attr('stop-color', colorMap[target.id]);
-        return `url(#${gradId})`;
-      });
-    
-    // Select nodes
-    const nodes = svgNode.append('g')
-      .selectAll('g')
-      .data(dag.descendants())
-      .enter()
-      .append('g')
-      .attr('transform', ({x, y}) => `translate(${x}, ${y})`);
-    
-    // Plot node circles
-    nodes.append('circle')
-      .attr('r', nodeRadius)
-      .attr('fill', n => colorMap[n.id]);
-    
-    const arrow = d3.symbol().type(d3.symbolTriangle).size(nodeRadius * nodeRadius / 5.0);
-    svgNode.append('g')
-      .selectAll('path')
-      .data(dag.links())
-      .enter()
-      .append('path')
-      .attr('d', arrow)
-      .attr('transform', ({ source, target, data }) => {
-        const [end, start] = data.points.reverse();
-        // This sets the arrows the node radius (20) + a little bit (3) away
-        // from the node center, on the last line segment of the edge. This
-        // means that edges that only span ine level will work perfectly, but if
-        // the edge bends, this will be a little off.
-        const dx = start.x - end.x;
-        const dy = start.y - end.y;
-        const scale = nodeRadius * 1.15 / Math.sqrt(dx * dx + dy * dy);
-        // This is the angle of the last line segment
-        const angle = Math.atan2(-dy, -dx) * 180 / Math.PI + 90;
-        return `translate(${end.x + dx * scale}, ${end.y + dy * scale}) rotate(${angle})`;
+    // init graph
+    const graph = new dagreD3.graphlib.Graph()
+    .setGraph({
+      rankdir: "LR",
+    })
+    .setDefaultEdgeLabel(function() {return {}});
+
+    // add data to graph
+    data.forEach((d) => {
+      graph.setNode(d.id, {
+        label: d.id,
+        rx: 5,
+        ry: 5,
       })
-      .attr('fill', ({ target }) => colorMap[target.id])
-      .attr('stroke', 'white')
-      .attr('stroke-width', 1.5);
-  
-    // Add text to nodes
-    nodes.append('text')
-      .text(d => d.id)
-      .attr('font-weight', 'bold')
-      .attr('font-family', 'sans-serif')
-      .attr('text-anchor', 'middle')
-      .attr('alignment-baseline', 'bottom')
-      .attr('fill', 'black');
+      d.parentIds.forEach((parent) => {
+        graph.setEdge(parent, d.id)
+      })
+    })
 
-    }, [width, height, data]);
+    // render
+    render(inner, graph);
 
-    return <svg
+    //set up zoom transformation based on graph
+    const initialScale = 3;
+    svg.call(zoom.transform, d3.zoomIdentity.translate((parseInt(svg.attr("width")) - graph.graph().width * initialScale) / 2, 20).scale(initialScale));
+
+    //TODO fit graph to screen and center
+  }, [data, container, dag])
+
+
+  return (<svg
     width={width}
     height={height}
     ref={container}
     className="dag-container"
-    />
+    >
+      <g className="dag" ref={dag}></g>
+      </svg>
+  )
 };
-
 
 export default Dag;

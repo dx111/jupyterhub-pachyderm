@@ -7,6 +7,7 @@ import React from 'react'
 export async function createDag(): Promise<Widget> {
     try {
       const data = await requestAPI<any>('dag');
+      //TODO dynamically set width and height
       const widget = ReactWidget.create(
         <Dag data={data} width={1300} height={700}></Dag>
       )
