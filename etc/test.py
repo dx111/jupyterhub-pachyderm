@@ -35,8 +35,9 @@ def main(url, username, password, webdriver_path, headless, debug):
     driver.get(url)
 
     # fill out username/password fields
-    username_field = driver.find_element_by_id("username_input")
-    username_field.send_keys(username)
+    if username:
+        username_field = driver.find_element_by_id("username_input")
+        username_field.send_keys(username)
     password_field = driver.find_element_by_id("password_input")
     password_field.send_keys(password)
     driver.find_element_by_id("login_submit").click()
