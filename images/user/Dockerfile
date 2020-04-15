@@ -10,4 +10,6 @@ ADD config.sh /app/config.sh
 RUN chmod +x /app/config.sh
 
 USER $NB_UID
-RUN pip install python-pachyderm
+
+RUN pip install --upgrade pip
+RUN pip install python_pachyderm
