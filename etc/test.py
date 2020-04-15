@@ -48,7 +48,7 @@ def main(url, username, password, webdriver_path, headless, debug):
     # homepage.
     def check_title():
         assert driver.title == "Home Page - Select or create a notebook", "not in the user homepage"
-    retry(check_title, attempts=30)
+    retry(check_title, attempts=60)
 
     if not debug:
         driver.quit()
