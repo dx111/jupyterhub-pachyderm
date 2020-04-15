@@ -8,9 +8,9 @@ set -ex
 ./etc/start_minikube.sh
 
 pushd images/hub
-    make docker-build
+    VERSION=local make docker-build
 popd
 
 pushd images/user
-    make docker-build
+    VERSION=local make docker-build
 popd

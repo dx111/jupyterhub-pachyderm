@@ -1,0 +1,4 @@
+singleuser:
+  image:
+    name: pachyderm/jupyterhub-pachyderm-user
+    tag: local
