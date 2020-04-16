@@ -44,6 +44,7 @@ function reset_minikube {
 
 # Make an initial deployment of pachyderm
 print_section "Deploy pachyderm"
+reset_minikube
 deploy_pachyderm
 
 case "${VARIANT}" in
