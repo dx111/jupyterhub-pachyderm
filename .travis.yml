@@ -21,7 +21,7 @@ env:
 install:
 - ./etc/travis_install.sh
 before_script:
-- ./etc/travis_setup.sh
+- make docker-build-local
 script:
 - ./etc/travis_test.sh
 
