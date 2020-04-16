@@ -4,7 +4,7 @@ set -e
 
 source ./etc/test_utils.sh
 
-./etc/start_minikube.sh
+reset_minikube
 
 # Make an initial deployment of pachyderm
 print_section "Deploy pachyderm"

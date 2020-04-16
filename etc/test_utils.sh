@@ -37,4 +37,8 @@ function reset_minikube {
     minikube delete
     sudo rm -rf /var/pachyderm # delete the pachyderm hostpath
     ./etc/start_minikube.sh
+    ./etc/push-to-minikube.sh pachyderm/jupyterhub-pachyderm-hub:local
+    ./etc/push-to-minikube.sh pachyderm/jupyterhub-pachyderm-user:local
+    ./etc/push-to-minikube.sh pachyderm/pachd:local
+    ./etc/push-to-minikube.sh pachyderm/worker:local
 }
