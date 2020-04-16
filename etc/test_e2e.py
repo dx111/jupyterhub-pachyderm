@@ -89,7 +89,7 @@ def login(driver, url, username, password):
     # loading page while the user pod is spun up. We want to ensure it
     # successfully clears this loading page and gets to the homepage.
     def check_title():
-        assert driver.title == "Home Page - Select or create a notebook", "not in the user homepage"
+        assert driver.title == "Home Page - Select or create a notebook", "unexpected page title: {}".format(driver.title)
     retry(check_title, attempts=30)
 
 def get_token(driver, url):
