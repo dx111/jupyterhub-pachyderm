@@ -1,4 +1,11 @@
-.PHONY: test-e2e docker-build-local test-native test-python test-existing test
+.PHONY: \
+	test-e2e \
+	docker-build-local \
+	test-native \
+	test-python \
+	test-existing \
+	test \
+	release
 
 venv:
 	virtualenv -p python3.7 venv
@@ -25,3 +32,7 @@ test-existing: docker-build-local
 test:
 	minikube delete
 	make test-native test-python test-existing
+
+release:
+	cd images/hub && make docker-push
+	cd images/user && make docker-push
