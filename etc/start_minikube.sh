@@ -2,15 +2,10 @@
 
 set -ex
 
-minikube_args=(
-    "--vm-driver=none"
-    "--kubernetes-version=v1.13.0"
-)
-
 # Repeatedly restart minikube until it comes up. This corrects for an issue in
 # Travis, where minikube will get stuck on startup and never recover
 while true; do
-    sudo env "PATH=$PATH" "CHANGE_MINIKUBE_NONE_USER=true" minikube start "${minikube_args[@]}"
+    sudo env "PATH=$PATH" "CHANGE_MINIKUBE_NONE_USER=true" minikube start --vm-driver=none
     HEALTHY=false
     # Try to connect for one minute
     for _ in $(seq 12); do

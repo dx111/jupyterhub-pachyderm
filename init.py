@@ -225,6 +225,7 @@ if __name__ == "__main__":
     parser.add_argument("--dry-run", default=False, action="store_true", help="Print out the Helm config rather than running the command.")
     parser.add_argument("--tls-host", default="", help="If set, TLS is enabled on JupyterHub via Let's Encrypt. The value is a hostname associated with the TLS certificate.")
     parser.add_argument("--tls-email", default="", help="If set, TLS is enabled on JupyterHub via Let's Encrypt. The value is an email address associated with the TLS certificate.")
+    parser.add_argument("--use-version", default="", help="If set, the specified version of jupyterhub-pachyderm is deployed. Defaults to a stable release.")
     args = parser.parse_args()
 
     # validate args
@@ -239,7 +240,7 @@ if __name__ == "__main__":
     with open("version.json", "r") as f:
         j = json.load(f)
         jupyterhub_version = j["jupyterhub"]
-        version = j["jupyterhub_pachyderm"]
+        default_version = j["jupyterhub_pachyderm"]
 
     try:
         main(
@@ -249,7 +250,7 @@ if __name__ == "__main__":
             args.tls_host,
             args.tls_email,
             jupyterhub_version,
-            version
+            args.use_version or default_version
         )
     except ApplicationError as e:
         print("error: {}".format(e), file=sys.stderr)
