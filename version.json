@@ -1,5 +1,5 @@
 {
     "pachctl": "1.10.0",
     "jupyterhub": "0.8.2",
-    "jupyterhub_pachyderm": "custom-login-0.1.0"
+    "jupyterhub_pachyderm": "1.1.0"
 }
