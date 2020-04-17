@@ -122,7 +122,7 @@ case "${VARIANT}" in
 
         # Patch in our custom user image
         print_section "Patch in the user image"
-        helm upgrade jhub jupyterhub/jupyterhub --values ./etc/config/test_patch.yaml
+        helm upgrade --install jhub jupyterhub/jupyterhub --version 0.8.2 --values ./etc/config/test_patch.yaml
 
         wait_for_jupyterhub
         url=$(minikube service proxy-public --url | head -n 1)
