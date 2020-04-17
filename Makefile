@@ -1,4 +1,4 @@
-.PHONY: test-e2e docker-build-local
+.PHONY: test-e2e docker-build-local deploy-native-local deploy-local
 
 venv:
 	virtualenv -p python3.7 venv
@@ -12,3 +12,12 @@ test-e2e: venv
 docker-build-local:
 	cd images/hub && VERSION=local make docker-build
 	cd images/user && VERSION=local make docker-build
+
+# NOTE: requires pachctl >= 1.11
+deploy-native-local:
+	$(GOPATH)/bin/pachctl deploy jupyterhub \
+        --user-image "pachyderm/jupyterhub-pachyderm-user:local" \
+        --hub-image "pachyderm/jupyterhub-pachyderm-hub:local"
+
+deploy-local:
+	python3.7 init.py --use-version=local

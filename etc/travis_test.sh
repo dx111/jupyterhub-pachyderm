@@ -60,17 +60,13 @@ case "${VARIANT}" in
     native)
         # Deploy jupyterhub
         print_section "Deploy jupyterhub"
-        ${GOPATH}/bin/pachctl deploy jupyterhub \
-            --user-image "pachyderm/jupyterhub-pachyderm-user:local" \
-            --hub-image "pachyderm/jupyterhub-pachyderm-hub:local"
+        make deploy-native-local
         test_run_with_auth
 
         # Re-run jupyterhub deployment, should act as an upgrade and not error
         # out
         print_section "Upgrade jupyterhub"
-        ${GOPATH}/bin/pachctl deploy jupyterhub \
-            --user-image "pachyderm/jupyterhub-pachyderm-user:local" \
-            --hub-image "pachyderm/jupyterhub-pachyderm-hub:local"
+        make deploy-native-local
         test_run_with_auth
 
         # Undeploy everything, including jupyterhub
@@ -83,21 +79,19 @@ case "${VARIANT}" in
         print_section "Re-deploy pachyderm"
         deploy_pachyderm
         print_section "Re-deploy jupyterhub"
-        ${GOPATH}/bin/pachctl deploy jupyterhub \
-            --user-image "pachyderm/jupyterhub-pachyderm-user:local" \
-            --hub-image "pachyderm/jupyterhub-pachyderm-hub:local"
+        make deploy-native-local
         test_run_with_auth
         ;;
     python)
         # Deploy jupyterhub
         print_section "Deploy jupyterhub"
-        python3.7 init.py --use-version=local
+        make deploy-local
         test_run_with_auth
 
         # Re-run jupyterhub deployment, should act as an upgrade and not error
         # out
         print_section "Upgrade jupyterhub"
-        python3.7 init.py --use-version=local
+        make deploy-local
         test_run_with_auth
 
         # Undeploy jupyterhub
@@ -110,7 +104,7 @@ case "${VARIANT}" in
         print_section "Re-deploy pachyderm"
         deploy_pachyderm
         print_section "Re-deploy jupyterhub"
-        python3.7 init.py --use-version=local
+        make deploy-local
         test_run_with_auth
         ;;
     patch)
