@@ -1,4 +1,4 @@
-dist: xenial
+dist: bionic
 sudo: required
 services:
 - docker
@@ -16,12 +16,12 @@ env:
   matrix:
     - VARIANT=native
     - VARIANT=python
-    - VARIANT=existing
+    - VARIANT=patch
 
 install:
 - ./etc/travis_install.sh
 before_script:
-- ./etc/travis_setup.sh
+- make docker-build-local
 script:
 - ./etc/travis_test.sh
 
