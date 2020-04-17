@@ -5,6 +5,7 @@ This repo contains everything necessary for getting JupyterHub running and well-
 - Seamless authentication with Pachyderm: you can use your Pachyderm credentials to log in to JupyterHub.
 - Built-in support for Pachyderm interactivity in Python notebooks through our official Python client library - [python-pachyderm](https://github.com/pachyderm/python-pachyderm/).
 - Built-in support for `pachctl`, available in the JupyterHub terminal.
+- A JupyterLab extension for easy access to the Pachyderm shell.
 
 **Note** This is a Pachyderm Enterprise feature. Contact sales@pachyderm.com for more information.
 
