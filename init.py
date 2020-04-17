@@ -258,14 +258,12 @@ if __name__ == "__main__":
         default_hub_image_tag = j["hub_image"]
         default_user_image_tag = j["user_image"]
 
-    if ":" in args.hub_image:
-        hub_image = args.hub_image.split(":", maxsplit=1)
-    else:
+    hub_image = args.hub_image.split(":", maxsplit=1)
+    if len(hub_image) != 2:
         hub_image = (args.hub_image, default_hub_image_tag)
 
-    if ":" in args.user_image:
-        user_image = args.user_image.split(":", maxsplit=1)
-    else:
+    user_image = args.user_image.split(":", maxsplit=1)
+    if len(user_image) != 2:
         user_image = (args.user_image, default_user_image_tag)
 
     try:
