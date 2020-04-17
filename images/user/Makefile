@@ -1,5 +1,5 @@
 PACHCTL_VERSION = $(shell jq -r .pachctl ../../version.json)
-VERSION = $(shell jq -r .user_image ../../version.json)
+VERSION ?= $(shell jq -r .user_image ../../version.json)
 
 .PHONY: docker-build docker-push dev-build dev-server
 

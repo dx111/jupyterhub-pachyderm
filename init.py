@@ -17,13 +17,13 @@ WHO_AM_I_PARSER = re.compile(r"You are \"(.+)\"")
 BASE_CONFIG = """
 singleuser:
   image:
-    name: pachyderm/jupyterhub-pachyderm-user
-    tag: "{user_image_version}"
+    name: "{user_image_name}"
+    tag: "{user_image_tag}"
   defaultUrl: "{default_url}"
 hub:
   image:
-    name: pachyderm/jupyterhub-pachyderm-hub
-    tag: "{hub_image_version}"
+    name: "{hub_image_name}"
+    tag: "{hub_image_tag}"
 """
 
 JUPYTERLAB_CONFIG = """
@@ -119,7 +119,7 @@ def run_helm(debug, *args, **kwargs):
 def print_section(section):
     print("===> {}".format(section))
 
-def main(debug, no_verify_contexts, dry_run, tls_host, tls_email, legacy_ui, jupyterhub_version, hub_image_version, user_image_version):
+def main(debug, no_verify_contexts, dry_run, tls_host, tls_email, jupyterlab, jupyterhub_version, hub_image, user_image):
     # print versions, which in the process validates that dependencies are installed
     print_section("checking dependencies are installed")
     run_version_check("kubectl", "version")
@@ -195,12 +195,14 @@ def main(debug, no_verify_contexts, dry_run, tls_host, tls_email, legacy_ui, jup
     secret_token = secrets.token_hex(32)
 
     config = BASE_CONFIG.format(
-        hub_image_version=hub_image_version,
-        user_image_version=user_image_version,
+        hub_image_name=hub_image[0],
+        hub_image_tag=hub_image[1],
+        user_image_name=user_image[0],
+        user_image_tag=user_image[1],
         default_url="/tree" if legacy_ui else "/lab"
     )
 
-    if not legacy_ui:
+    if jupyterlab:
         config += JUPYTERLAB_CONFIG
 
     config += AUTH_BASE_CONFIG.format(
@@ -236,7 +238,9 @@ if __name__ == "__main__":
     parser.add_argument("--dry-run", default=False, action="store_true", help="Print out the Helm config rather than running the command.")
     parser.add_argument("--tls-host", default="", help="If set, TLS is enabled on JupyterHub via Let's Encrypt. The value is a hostname associated with the TLS certificate.")
     parser.add_argument("--tls-email", default="", help="If set, TLS is enabled on JupyterHub via Let's Encrypt. The value is an email address associated with the TLS certificate.")
-    parser.add_argument("--legacy-ui", default=False, action="store_true", help="Use the legacy UI (rather than JupyterLab.) Note that some functionality only works in JupyterLab.")
+    parser.add_argument("--jupyterlab", default=False, action="store_true", help="Use the JupterLab UI. Enables extra Pachyderm functionality available through JupyterLab extensions.")
+    parser.add_argument("--hub-image", default="pachyderm/jupyterhub-pachyderm-hub", help="If set, the specified image will be used for JupyterHub.")
+    parser.add_argument("--user-image", default="pachyderm/jupyterhub-pachyderm-user", help="If set, the specified image will be used for Jupyter user environments.")
     args = parser.parse_args()
 
     # validate args
@@ -251,9 +255,19 @@ if __name__ == "__main__":
     with open("version.json", "r") as f:
         j = json.load(f)
         jupyterhub_version = j["jupyterhub"]
-        hub_image_version = j["hub_image"]
-        user_image_version = j["user_image"]
-    
+        default_hub_image_tag = j["hub_image"]
+        default_user_image_tag = j["user_image"]
+
+    if ":" in args.hub_image:
+        hub_image = args.hub_image.split(":", maxsplit=1)
+    else:
+        hub_image = (args.hub_image, default_hub_image_tag)
+
+    if ":" in args.user_image:
+        user_image = args.user_image.split(":", maxsplit=1)
+    else:
+        user_image = (args.user_image, default_user_image_tag)
+
     try:
         main(
             args.debug,
@@ -261,10 +275,10 @@ if __name__ == "__main__":
             args.dry_run,
             args.tls_host,
             args.tls_email,
-            args.legacy_ui,
+            args.jupyterlab,
             jupyterhub_version,
-            hub_image_version,
-            user_image_version,
+            hub_image,
+            user_image,
         )
     except ApplicationError as e:
         print("error: {}".format(e), file=sys.stderr)
