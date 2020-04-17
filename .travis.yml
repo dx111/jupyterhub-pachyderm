@@ -16,7 +16,7 @@ env:
   matrix:
     - VARIANT=native
     - VARIANT=python
-    - VARIANT=existing
+    - VARIANT=patch
 
 install:
 - ./etc/travis_install.sh

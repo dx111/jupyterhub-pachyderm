@@ -79,7 +79,7 @@ case "${VARIANT}" in
     python)
         install_helm
         ;;
-    existing)
+    patch)
         install_helm
         helm repo add jupyterhub https://jupyterhub.github.io/helm-chart/
         helm repo update
