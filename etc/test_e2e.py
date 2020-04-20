@@ -114,6 +114,8 @@ async def test_terminal(url, token, username, no_auth_check):
     expected dependencies are installed
     """
 
+    print("terminal init")
+
     # Start a terminal session
     res = requests.request("POST", urljoin(url, "/user/{}/api/terminals".format(urlquote(username))), data=dict(token=token))
     res.raise_for_status()
