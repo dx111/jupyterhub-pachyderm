@@ -199,7 +199,7 @@ def main(debug, no_verify_contexts, dry_run, tls_host, tls_email, jupyterlab, ju
         hub_image_tag=hub_image[1],
         user_image_name=user_image[0],
         user_image_tag=user_image[1],
-        default_url="/tree" if legacy_ui else "/lab"
+        default_url="/lab" if jupyterlab else "/tree"
     )
 
     if jupyterlab:
