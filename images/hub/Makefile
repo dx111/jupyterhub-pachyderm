@@ -1,5 +1,5 @@
 JUPYTERHUB_VERSION = $(shell jq -r .jupyterhub ../../version.json)
-VERSION ?= $(shell jq -r .hub_image ../../version.json)
+VERSION ?= $(shell jq -r .jupyterhub_pachyderm ../../version.json)
 
 .PHONY: docker-build docker-push
 

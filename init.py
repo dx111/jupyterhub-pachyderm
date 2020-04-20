@@ -255,16 +255,15 @@ if __name__ == "__main__":
     with open("version.json", "r") as f:
         j = json.load(f)
         jupyterhub_version = j["jupyterhub"]
-        default_hub_image_tag = j["hub_image"]
-        default_user_image_tag = j["user_image"]
+        default_image_tag = j["jupyterhub_pachyderm"]
 
     hub_image = args.hub_image.split(":", maxsplit=1)
     if len(hub_image) != 2:
-        hub_image = (args.hub_image, default_hub_image_tag)
+        hub_image = (args.hub_image, default_image_tag)
 
     user_image = args.user_image.split(":", maxsplit=1)
     if len(user_image) != 2:
-        user_image = (args.user_image, default_user_image_tag)
+        user_image = (args.user_image, default_image_tag)
 
     try:
         main(
