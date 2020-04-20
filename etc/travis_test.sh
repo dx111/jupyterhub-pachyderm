@@ -41,7 +41,7 @@ function wait_for_jupyterhub {
 function test_run_with_auth {
     wait_for_jupyterhub
     url=$(minikube service proxy-public --url | head -n 1)
-    python3 ./etc/test_e2e.py "${url}" "github:admin" "$(pachctl auth get-otp)" --headless
+    python3 ./etc/test_e2e.py "${url}" "" "$(pachctl auth get-otp)" --headless
 }
 
 # Deletes and restarts minikube
