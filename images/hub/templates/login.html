@@ -142,6 +142,7 @@ vvR17eEsv5+L0UolpvIESgSpYX5iGuS9eZolPa0LMZIiynLUGOYppkGI1CDfup+8aLKZn5gGGc3w
             id="password_input"
             tabindex="2"
             placeholder="Paste your token here..."
+            required
           />
 
           <input
@@ -161,11 +162,11 @@ vvR17eEsv5+L0UolpvIESgSpYX5iGuS9eZolPa0LMZIiynLUGOYppkGI1CDfup+8aLKZn5gGGc3w
 {% block script %}
   {{ super() }}
   <script>
-  if (window.location.protocol === "http:") {
-    // unhide http warning
-    var warning = document.getElementById('insecure-login-warning');
-    warning.className = warning.className.replace(/\bhidden\b/, '');
-  }
+    if (window.location.protocol === "http:") {
+      // unhide http warning
+      var warning = document.getElementById('insecure-login-warning');
+      warning.className = warning.className.replace(/\bhidden\b/, '');
+    }
   </script>
 {% endblock %}
 
@@ -185,8 +186,18 @@ vvR17eEsv5+L0UolpvIESgSpYX5iGuS9eZolPa0LMZIiynLUGOYppkGI1CDfup+8aLKZn5gGGc3w
       background: #5BA3B1;
     }
 
+    #login-main #pachyderm-auth-form-body {
+      border: none;
+    }
+
+    #login-main #insecure-login-warning {
+      margin: 0 10px 30px 10px;
+      padding: 15px;
+    }
+
     #login-main .pachyderm-step {
       font-weight: bold;
+      margin-top: 20px;
     }
 
     #login-main #pachyderm-github-token-button {
