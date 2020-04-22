@@ -57,14 +57,6 @@ source ~/cached-deps/venv/bin/activate
 pip3 install -r etc/test_requirements.txt
 
 # Variant-specific installations
-function install_helm {
-    if [ ! -f ~/cached-deps/helm ] ; then
-        wget https://get.helm.sh/helm-v3.1.2-linux-amd64.tar.gz
-        tar -zxvf helm-v3.1.2-linux-amd64.tar.gz
-        mv linux-amd64/helm ~/cached-deps/helm
-    fi
-}
-
 case "${VARIANT}" in
     native)
         # Installs pachctl with native support
@@ -77,7 +69,11 @@ case "${VARIANT}" in
         popd
         ;;
     patch)
-        install_helm
+        if [ ! -f ~/cached-deps/helm ] ; then
+            wget https://get.helm.sh/helm-v3.1.2-linux-amd64.tar.gz
+            tar -zxvf helm-v3.1.2-linux-amd64.tar.gz
+            mv linux-amd64/helm ~/cached-deps/helm
+        fi
         helm repo add jupyterhub https://jupyterhub.github.io/helm-chart/
         helm repo update
         ;;
