@@ -10,14 +10,14 @@ test-e2e: venv
         "" "$(shell pachctl auth get-otp)" --debug
 
 docker-build-local:
-	cd images/hub && VERSION=local make docker-build
-	cd images/user && VERSION=local make docker-build
+	cd hub && VERSION=local make docker-build
+	cd user && VERSION=local make docker-build
 
 # NOTE: requires pachctl >= 1.11
 deploy-native-local:
-	$(GOPATH)/bin/pachctl deploy jupyterhub \
-        --user-image "pachyderm/jupyterhub-pachyderm-user:local" \
-        --hub-image "pachyderm/jupyterhub-pachyderm-hub:local"
+	$(GOPATH)/bin/pachctl deploy ide \
+        --user-image "pachyderm/ide-user:local" \
+        --hub-image "pachyderm/ide-hub:local"
 
 deploy-local:
 	python3.7 init.py --use-version=local

@@ -6,19 +6,19 @@ import python_pachyderm
 
 MISCONFIGURATION_HTML = """
 <h1>Misconfiguration</h1>
-<div>There is a misconfiguration with your JupyterHub deployment.</div>
+<div>There is a misconfiguration with your Pachyderm IDE deployment.</div>
 <div>See the logs for the hub pod for details.</div>
-<div>In most cases, manually reconfiguring or redeploying JupyterHub fixes the issue.</div>
+<div>In most cases, manually reconfiguring or redeploying the Pachyderm IDE fixes the issue.</div>
 """
 
 ENTERPRISE_DISABLED_HTML = """
 <h1>Enterprise disabled</h1>
-<div>Please activate pachyderm enterprise before using jupyterhub-pachyderm.</div>
+<div>Please activate pachyderm enterprise before using the Pachyderm IDE.</div>
 """
 
 ENTERPRISE_EXPIRED_HTML = """
 <h1>Enterprise expired</h1>
-<div>Your enterprise license is expired. Please re-activate before using jupyterhub-pachyderm.</div>
+<div>Your enterprise license is expired. Please re-activate before using the Pachyderm IDE.</div>
 """
 
 class PachydermAuthenticator(Authenticator):
