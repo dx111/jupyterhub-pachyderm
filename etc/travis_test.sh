@@ -82,31 +82,6 @@ case "${VARIANT}" in
         make deploy-native-local
         test_run_with_auth
         ;;
-    python)
-        # Deploy jupyterhub
-        print_section "Deploy jupyterhub"
-        make deploy-local
-        test_run_with_auth
-
-        # Re-run jupyterhub deployment, should act as an upgrade and not error
-        # out
-        print_section "Upgrade jupyterhub"
-        make deploy-local
-        test_run_with_auth
-
-        # Undeploy jupyterhub
-        print_section "Undeploy"
-        ./delete.sh
-
-        # Reset minikube fully and re-run the deployment/test cycle. This
-        # ensures that jupyterhub doesn't mistakenly pull in its old PV.
-        reset_minikube
-        print_section "Re-deploy pachyderm"
-        deploy_pachyderm
-        print_section "Re-deploy jupyterhub"
-        make deploy-local
-        test_run_with_auth
-        ;;
     patch)
         # Create a vanilla jupyterhub deployment, which employs the default
         # (non-pachyderm) login mechanism

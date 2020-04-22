@@ -1,8 +1,8 @@
 # Advanced Setup Guide
 
-If `init.py` does not offer the level customization you need for your JupyterHub deployment, you can manually install it by following the [zero to JupyterHub guide](https://zero-to-jupyterhub.readthedocs.io/en/latest/index.html). It should be installed on the same cluster as Pachyderm. 
+If `pachctl deploy jupyterhub` does not offer the level customization you need for your JupyterHub deployment, you can manually install it by following the [zero to JupyterHub guide](https://zero-to-jupyterhub.readthedocs.io/en/latest/index.html). It should be installed on the same cluster as Pachyderm. 
 
-Create a Helm `config.yaml` by running `./init.py --dry-run`, it should output something like this:
+Create a Helm `config.yaml` by running `pachctl deploy jupyterhub --dry-run`, it should output something like this:
 
 ```yaml
 hub:
@@ -26,4 +26,7 @@ auth:
       global_password: "{some random string}"
 ```
 
-Modify it with whatever customizations you wish, then use `helm install` or `helm upgrade` with that config to install JupyterHub.
+Modify it with whatever customizations you wish, then save it to `config.yaml`.
+
+1) If you're doing a new installation of JupyterHub, run `helm install jhub jupyterhub/jupyterhub --version=0.8.2 -f config.yaml`.
+2) If you want to just change the config in an existing JupyterHub installation, run `helm upgrade jhub --reuse-values -f config.yaml`.
