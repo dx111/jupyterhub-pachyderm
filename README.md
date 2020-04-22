@@ -1,36 +1,25 @@
-# jupyterhub-pachyderm
+# Pachyderm IDE
 
-Docker images and tests for jupyterhub-pachyderm.
+A JupyterHub-based IDE for Pachyderm. Built to deploy on Kubernetes, alongside Pachyderm.
 
 **Note** This is a Pachyderm Enterprise feature. Contact sales@pachyderm.com for more information.
 
-## Supported Platforms
-
-Tested on these platforms:
-
-* GKE (kubernetes 1.13)
-* EKS (kubernetes 1.13)
-* Docker for mac (kubernetes 1.14)
-* Minikube, for kubernetes < 1.16
-
-## Deploying JupyterHub
+## Deploying
 
 1) [Deploy pachyderm](https://docs.pachyderm.com/latest/getting_started/local_installation/).
-2) Run `pachctl deploy jupyterhub`.
+2) Run `pachctl deploy ide`.
 3) If there's a firewall between you and the kubernetes cluster, make sure to punch a hole so you can connect to port 80 on it. [See cloud-specific instructions here.](https://zero-to-jupyterhub.readthedocs.io/en/latest/create-k8s-cluster.html)
 
-If you need to customize your JupyterHub deployment more than what `pachctl deploy jupyterhub` offers, see our [advanced setup guide.](doc/advanced_setup.md)
+If you need to customize your IDE deployment more than what `pachctl deploy ide` offers, see our [advanced setup guide.](doc/advanced_setup.md)
 
-## Using JupyterHub
+## Using
 
-Once deployed, navigate to your JupyterHub instance:
+Once deployed, navigate to your instance:
 
 - By default, it should be reachable on port 80 of your cluster's hostname.
 - On minikube, navigate to one of the URLs printed out when you run `minikube service proxy-public --url`.
 
-You should see a login page. If you do not see the login page, read the troubleshooting section below. Log in by using your Pachyderm GitHub or OTP auth token for your password. Your JupyterHub username will be the same as your Pachyderm username.
-
-Once you're logged in, you should be able to connect to the Pachyderm cluster from within a JupyterHub notebook; e.g., if Pachyderm auth is enabled, try this:
+You should see a login page. Once you're logged in, you should be able to connect to the Pachyderm cluster from within a Jupyter notebook; e.g., if Pachyderm auth is enabled, try this:
 
 ```python
 import python_pachyderm
@@ -41,7 +30,7 @@ print(client.who_am_i())
 Notice that, without configuration:
 
 1) `python_pachyderm` is already installed.
-2) The username for `who_am_i()` is the same as your JupyterHub login username.
+2) The username for `who_am_i()` is the same as your Jupyter login username.
 
 For a more advanced example, see our [opencv walkthrough](doc/opencv.md).
 
@@ -77,17 +66,17 @@ Code layout, as of 4/20:
 
 ## Troubleshooting
 
-### Cannot reach JupyterHub
+### Cannot reach the IDE
 
-If `pachyderm deploy jupyterhub` finished successfully but you're having trouble getting to JupyterHub, ensure you've followed the cloud-specific instructions in [JupyterHub's setup guides](https://zero-to-jupyterhub.readthedocs.io/en/latest/create-k8s-cluster.html).
+If `pachyderm deploy ide` finished successfully but you're having trouble getting to the IDE, ensure you've followed the cloud-specific instructions in [JupyterHub's setup guides](https://zero-to-jupyterhub.readthedocs.io/en/latest/create-k8s-cluster.html).
 
 ### Getting "Service Unavailable" errors when connecting
 
-It may take a couple of minutes for JupyterHub to get fully up and running. Keep an eye on `kubectl` logs for errors in the hub pod.
+It may take a couple of minutes for the IDE to get fully up and running. Keep an eye on `kubectl` logs for errors in the hub pod.
 
 ### Cannot connect to Pachyderm in Jupyter notebooks
 
-In Jupyter notebooks, make sure you're using `python_pachyderm.Client.new_in_cluster()` to create a client -- this will ensure the client is automatically configured to work with the Pachyderm cluster, which should be running in the same Kubernetes cluster as JupyterHub.
+In Jupyter notebooks, make sure you're using `python_pachyderm.Client.new_in_cluster()` to create a client -- this will ensure the client is automatically configured to work with the Pachyderm cluster, which should be running in the same Kubernetes cluster as the IDE.
 
 ### Cannot authenticate to Pachyderm in Jupyter notebooks
 

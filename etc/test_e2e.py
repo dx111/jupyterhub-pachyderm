@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Runs end-to-end tests on a jupyterhub instance
+# Runs end-to-end tests on a Pachyderm IDE instance
 
 import re
 import sys
@@ -74,7 +74,7 @@ def login(driver, url, username, password):
     """
     print("login")
 
-    # get the jupyterhub login page
+    # get the login page
     driver.get(url)
 
     # fill out username/password fields
@@ -89,7 +89,7 @@ def login(driver, url, username, password):
     # loading page while the user pod is spun up. We want to ensure it
     # successfully clears this loading page and gets to the homepage.
     def check_title():
-        assert driver.title == "Home Page - Select or create a notebook", "unexpected page title: {}".format(driver.title)
+        assert driver.title == "JupyterLab", "unexpected page title: {}".format(driver.title)
     retry(check_title, attempts=30)
 
 def get_token(driver, url):
@@ -171,9 +171,9 @@ def main(url, username, password, webdriver_path, headless, debug, no_auth_check
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("url", help="JupyterHub login url")
-    parser.add_argument("username", help="JupyterHub login username")
-    parser.add_argument("password", help="JupyterHub login password")
+    parser.add_argument("url", help="IDE login URL")
+    parser.add_argument("username", help="IDE login username")
+    parser.add_argument("password", help="IDE login password")
     parser.add_argument("--webdriver", help="path to webdriver executable")
     parser.add_argument("--headless", action="store_true", help="headless mode")
     parser.add_argument("--debug", action="store_true", help="debug mode")

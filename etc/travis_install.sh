@@ -68,16 +68,13 @@ function install_helm {
 case "${VARIANT}" in
     native)
         # Installs pachctl with native support
-        # TODO: remove once native jupyterhub deployments are stable
+        # TODO: remove once native deployments are stable
         pushd ~
-            git clone --single-branch --branch master --depth 1 https://github.com/pachyderm/pachyderm.git
+            git clone --single-branch --branch ide --depth 1 https://github.com/pachyderm/pachyderm.git
             pushd pachyderm
                 make install
             popd
         popd
-        ;;
-    python)
-        install_helm
         ;;
     patch)
         install_helm

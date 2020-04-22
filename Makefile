@@ -15,9 +15,9 @@ docker-build-local:
 
 # NOTE: requires pachctl >= 1.11
 deploy-native-local:
-	$(GOPATH)/bin/pachctl deploy jupyterhub \
-        --user-image "pachyderm/jupyterhub-pachyderm-user:local" \
-        --hub-image "pachyderm/jupyterhub-pachyderm-hub:local"
+	$(GOPATH)/bin/pachctl deploy ide \
+        --user-image "pachyderm/ide-user:local" \
+        --hub-image "pachyderm/ide-hub:local"
 
 deploy-local:
 	python3.7 init.py --use-version=local
