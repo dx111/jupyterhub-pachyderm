@@ -10,8 +10,8 @@ test-e2e: venv
         "github:admin" "$(shell pachctl auth get-otp)" --debug
 
 docker-build-local:
-	cd images/hub && VERSION=local make docker-build
-	cd images/user && VERSION=local make docker-build
+	cd hub && VERSION=local make docker-build
+	cd user && VERSION=local make docker-build
 
 # NOTE: requires pachctl >= 1.11
 deploy-native-local:
