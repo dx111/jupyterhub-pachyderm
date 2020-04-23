@@ -5,13 +5,18 @@
 Deployer
 - Fixed deployment failing on empty pachyderm contexts
 - Added a flag for disabling context checks
+- Added a flag for defaulting to the JupyterLab UI
+- Added flags for customizing the tag used in deployed images
+
+User environment
+- Added a JupyterLab menu item for accessing the pachyderm shell
 
 ## 1.1.0
 
 Deployer
 - Added support for dry runs
 
-User image
+User environment
 - Update `python_pachyderm` to v4.0.0.
 - Update `pachctl` to v1.10.0.
 

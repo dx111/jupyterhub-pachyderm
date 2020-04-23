@@ -60,13 +60,13 @@ case "${VARIANT}" in
     native)
         # Deploy IDE
         print_section "Deploy IDE"
-        make deploy-native-local
+        make deploy-local
         test_run_with_auth
 
         # Re-run IDE deployment, should act as an upgrade and not error
         # out
         print_section "Upgrade IDE"
-        make deploy-native-local
+        make deploy-local
         test_run_with_auth
 
         # Undeploy everything, including the IDE
@@ -79,7 +79,7 @@ case "${VARIANT}" in
         print_section "Re-deploy pachyderm"
         deploy_pachyderm
         print_section "Re-deploy IDE"
-        make deploy-native-local
+        make deploy-local
         test_run_with_auth
         ;;
     patch)
