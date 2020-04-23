@@ -1,0 +1,223 @@
+{% extends "templates/page.html" %}
+
+{% if announcement_login %}
+  {% set announcement = announcement_login %}
+{% endif %}
+
+{% block nav_bar %}
+{% endblock %}
+
+{% block main %}
+
+  {% block login %}
+    <div id="login-main" class="container text-center">
+      <form action="{{login_url}}?next={{next}}" method="post" role="form">
+        <p>
+          <img src="data:image/png;base64,
+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" />
+          </p>
+
+        <div id="pachyderm-auth-form-header" class="auth-form-header">
+          Sign In
+        </div>
+        <div id="pachyderm-auth-form-body" class='auth-form-body'>
+          <p id='insecure-login-warning' class='hidden'>
+          JupyterHub seems to be served over an unsecured HTTP connection.
+          We strongly recommend enabling HTTPS for JupyterHub.
+          </p>
+
+          {% if login_error %}
+            <p class="login_error">
+              {{login_error}}
+            </p>
+          {% endif %}
+
+          <p class="pachyderm-step">Step 1</p>
+
+          <p>
+            <a
+              id="pachyderm-github-token-button"
+              class="btn" target="_blank"
+              href="http://github.com/login/oauth/authorize?client_id=d3481e92b4f09ea74ff8&redirect_uri=https://pachyderm.io/login-hook/display-token.html">
+              Get GitHub Token
+            </a>
+          </p>
+
+          <p class="pachyderm-step">Step 2</p>
+
+          <p>
+            Connect to Pachyderm using your GitHub account: you'll need to paste the token provided into the box below.
+          </p>
+
+          <input
+            type="password"
+            class="form-control"
+            name="password"
+            id="password_input"
+            tabindex="2"
+            placeholder="Paste your token here..."
+            required
+          />
+
+          <input
+            type="submit"
+            id="login_submit"
+            class='btn btn-jupyter'
+            value='Sign In'
+            tabindex="3"
+          />
+        </div>
+      </form>
+    </div>
+  {% endblock login %}
+
+{% endblock %}
+
+{% block script %}
+  {{ super() }}
+  <script>
+    if (window.location.protocol === "http:") {
+      // unhide http warning
+      var warning = document.getElementById('insecure-login-warning');
+      warning.className = warning.className.replace(/\bhidden\b/, '');
+    }
+  </script>
+{% endblock %}
+
+{% block stylesheet %}
+  {{ super() }}
+
+  <link href="https://fonts.googleapis.com/css?family=Montserrat:400,800&display=swap" rel="stylesheet">
+
+  <style>
+    #login-main {
+      font-family: "Montserrat", "Helvetica Neue", Helvetica, Arial, sans-serif !important;
+      font-size: 16px !important;
+    }
+
+    #login-main #pachyderm-auth-form-header {
+      font-weight: bold;
+      background: #5BA3B1;
+    }
+
+    #login-main #pachyderm-auth-form-body {
+      border: none;
+    }
+
+    #login-main #insecure-login-warning {
+      margin: 0 10px 30px 10px;
+      padding: 15px;
+    }
+
+    #login-main .pachyderm-step {
+      font-weight: bold;
+      margin-top: 20px;
+    }
+
+    #login-main #pachyderm-github-token-button {
+      border: 1px solid #5F2A6F;
+      border-radius: 2px;
+      color: #5F2A6F;
+      font-weight: bold;
+    }
+
+    #login-main #login_submit {
+      border: 1px solid #5F2A6F !important;
+      border-radius: 2px !important;
+      font-weight: bold;
+      background-color: #602970;
+      border: solid #FFFFFF 1px;
+    }
+
+    #login-main #pachyderm-auth-form-body {
+      border-radius: 2px;
+      box-shadow: 1px 1px 7px 0 #DADADA;
+    }
+  </style>
+{% endblock %}

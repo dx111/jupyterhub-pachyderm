@@ -41,7 +41,7 @@ function wait_for_jupyterhub {
 function test_run_with_auth {
     wait_for_jupyterhub
     url=$(minikube service proxy-public --url | head -n 1)
-    python3 ./etc/test_e2e.py "${url}" "github:admin" "$(pachctl auth get-otp)" --headless
+    python3 ./etc/test_e2e.py "${url}" "" "$(pachctl auth get-otp)" --headless
 }
 
 # Deletes and restarts minikube
@@ -58,53 +58,28 @@ deploy_pachyderm
 
 case "${VARIANT}" in
     native)
-        # Deploy jupyterhub
-        print_section "Deploy jupyterhub"
+        # Deploy IDE
+        print_section "Deploy IDE"
         make deploy-native-local
         test_run_with_auth
 
-        # Re-run jupyterhub deployment, should act as an upgrade and not error
+        # Re-run IDE deployment, should act as an upgrade and not error
         # out
-        print_section "Upgrade jupyterhub"
+        print_section "Upgrade IDE"
         make deploy-native-local
         test_run_with_auth
 
-        # Undeploy everything, including jupyterhub
+        # Undeploy everything, including the IDE
         print_section "Undeploy"
-        echo yes | ${GOPATH}/bin/pachctl undeploy --jupyterhub --metadata
+        echo yes | ${GOPATH}/bin/pachctl undeploy --ide --metadata
 
         # Reset minikube fully and re-run the deployment/test cycle. This
         # ensures that jupyterhub doesn't mistakenly pull in its old PV.
         reset_minikube
         print_section "Re-deploy pachyderm"
         deploy_pachyderm
-        print_section "Re-deploy jupyterhub"
+        print_section "Re-deploy IDE"
         make deploy-native-local
-        test_run_with_auth
-        ;;
-    python)
-        # Deploy jupyterhub
-        print_section "Deploy jupyterhub"
-        make deploy-local
-        test_run_with_auth
-
-        # Re-run jupyterhub deployment, should act as an upgrade and not error
-        # out
-        print_section "Upgrade jupyterhub"
-        make deploy-local
-        test_run_with_auth
-
-        # Undeploy jupyterhub
-        print_section "Undeploy"
-        ./delete.sh
-
-        # Reset minikube fully and re-run the deployment/test cycle. This
-        # ensures that jupyterhub doesn't mistakenly pull in its old PV.
-        reset_minikube
-        print_section "Re-deploy pachyderm"
-        deploy_pachyderm
-        print_section "Re-deploy jupyterhub"
-        make deploy-local
         test_run_with_auth
         ;;
     patch)

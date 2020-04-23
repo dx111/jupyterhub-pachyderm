@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Runs end-to-end tests on a jupyterhub instance
+# Runs end-to-end tests on a Pachyderm IDE instance
 
 import re
 import sys
@@ -8,7 +8,7 @@ import json
 import time
 import asyncio
 import argparse
-from urllib.parse import urljoin, quote as urlquote
+from urllib.parse import urljoin, quote as urlquote, urlparse, unquote as urlunquote
 
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
@@ -21,6 +21,7 @@ PACHCTL_WHOAMI_PATTERN = re.compile(r'You are ".+"\nsession expires: .+\nYou are
 PYTHON_WHOAMI_PATTERN = re.compile(r'username: \".+\"')
 PACHCTL_VERSION_PATTERN = re.compile(r'COMPONENT +VERSION +\npachctl', re.MULTILINE)
 PYTHON_VERSION_PATTERN = re.compile(r'major: (\d+)\nminor: (\d+)', re.MULTILINE)
+HOMEPAGE_PATH_PATTERN = re.compile(r'/user/([^/]+)/')
 
 def retry(f, attempts=10, sleep=1.0):
     """
@@ -68,20 +69,21 @@ def check_stdout(pattern, lines):
     assert pattern.search(lines) is not None, \
         "unexpected terminal output:\n{}".format(lines)
 
-def login(driver, url, username, password):
+def login(driver, url, login_username, login_password):
     """
     Tests for successful login using selenium
     """
     print("login")
 
-    # get the jupyterhub login page
+    # get the login page
     driver.get(url)
 
     # fill out username/password fields
-    username_field = driver.find_element_by_id("username_input")
-    username_field.send_keys(username)
+    if login_username:
+        username_field = driver.find_element_by_id("username_input")
+        username_field.send_keys(login_username)
     password_field = driver.find_element_by_id("password_input")
-    password_field.send_keys(password)
+    password_field.send_keys(login_password)
     driver.find_element_by_id("login_submit").click()
 
     # Repeatedly check for the title on the jupyter user homepage. We check
@@ -89,8 +91,12 @@ def login(driver, url, username, password):
     # loading page while the user pod is spun up. We want to ensure it
     # successfully clears this loading page and gets to the homepage.
     def check_title():
-        assert driver.title == "Home Page - Select or create a notebook", "unexpected page title: {}".format(driver.title)
+        assert driver.title == "JupyterLab", "unexpected page title: {}".format(driver.title)
     retry(check_title, attempts=30)
+
+    # Get the logged in username
+    homepage_url = urlparse(driver.current_url)
+    return urlunquote(HOMEPAGE_PATH_PATTERN.match(homepage_url.path).groups()[0])
 
 def get_token(driver, url):
     """
@@ -112,6 +118,8 @@ async def test_terminal(url, token, username, no_auth_check):
     Tests that it's possible to start a Jupyter terminal session, and that
     expected dependencies are installed
     """
+
+    print("terminal init")
 
     # Start a terminal session
     res = requests.request("POST", urljoin(url, "/user/{}/api/terminals".format(urlquote(username))), data=dict(token=token))
@@ -151,7 +159,7 @@ async def test_terminal(url, token, username, no_auth_check):
             lines = await run_command(ws, "python3 -c 'import python_pachyderm; c = python_pachyderm.Client.new_in_cluster(); print(c.who_am_i())'")
             check_stdout(PYTHON_WHOAMI_PATTERN, lines)
 
-def main(url, username, password, webdriver_path, headless, debug, no_auth_check):
+def main(url, login_username, login_password, webdriver_path, headless, debug, no_auth_check):
     opts = Options()
     opts.headless = headless
 
@@ -162,18 +170,18 @@ def main(url, username, password, webdriver_path, headless, debug, no_auth_check
         driver = webdriver.Firefox(options=opts)
     
     # run tests
-    login(driver, url, username, password)
+    resolved_username = login(driver, url, login_username, login_password)
     token = get_token(driver, url)
-    asyncio.run(test_terminal(url, token, username, no_auth_check))
+    asyncio.run(test_terminal(url, token, resolved_username, no_auth_check))
 
     if not debug:
         driver.quit()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("url", help="JupyterHub login url")
-    parser.add_argument("username", help="JupyterHub login username")
-    parser.add_argument("password", help="JupyterHub login password")
+    parser.add_argument("url", help="IDE login URL")
+    parser.add_argument("username", help="IDE login username")
+    parser.add_argument("password", help="IDE login password")
     parser.add_argument("--webdriver", help="path to webdriver executable")
     parser.add_argument("--headless", action="store_true", help="headless mode")
     parser.add_argument("--debug", action="store_true", help="debug mode")

@@ -12,6 +12,7 @@ RUN chmod +x config.sh
 COPY pachyderm-jupyterlab-extension pachyderm-jupyterlab-extension
 
 USER $NB_UID
+
 RUN pip install --upgrade pip
 
 WORKDIR /app/pachyderm-jupyterlab-extension
