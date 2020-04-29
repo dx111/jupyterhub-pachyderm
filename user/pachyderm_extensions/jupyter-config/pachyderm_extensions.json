@@ -1,7 +1,7 @@
 {
   "NotebookApp": {
     "nbserver_extensions": {
-      "pachyderm-jupyterlab-extension": true
+      "pachyderm_extensions": true
     }
   }
 }

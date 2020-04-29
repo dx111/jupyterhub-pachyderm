@@ -1,5 +1,5 @@
 """
-Setup Module to setup Python Handlers for the pachyderm-jupyterlab-extension extension.
+Setup Module to setup Python Handlers for pachyderm_extensions.
 """
 import os
 
@@ -12,7 +12,7 @@ import setuptools
 HERE = os.path.abspath(os.path.dirname(__file__))
 
 # The name of the project
-name="pachyderm-jupyterlab-extension"
+name="pachyderm_extensions"
 
 # Ensure a valid python version
 ensure_python(">=3.6")
@@ -31,7 +31,7 @@ package_data_spec = {
 data_files_spec = [
     ("share/jupyter/lab/extensions", lab_path, "*.tgz"),
     ("etc/jupyter/jupyter_notebook_config.d",
-     "jupyter-config", "pachyderm-jupyterlab-extension.json"),
+     "jupyter-config", "pachyderm_extensions.json"),
 ]
 
 cmdclass = create_cmdclass("jsdeps", 

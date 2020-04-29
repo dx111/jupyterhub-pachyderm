@@ -13,9 +13,9 @@ USER root
 WORKDIR /app
 COPY config.sh .
 RUN chmod +x config.sh
-COPY pachyderm-jupyterlab-extension pachyderm-jupyterlab-extension
+COPY pachyderm_extensions pachyderm_extensions
 
-WORKDIR /app/pachyderm-jupyterlab-extension
+WORKDIR /app/pachyderm_extensions
 RUN pip install .
 RUN jupyter lab build
 

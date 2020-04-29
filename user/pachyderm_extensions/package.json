@@ -1,5 +1,5 @@
 {
-  "name": "jupyterlab_pachyderm-jupyterlab-extension",
+  "name": "jupyterlab_pachyderm_extensions",
   "version": "0.1.0",
   "description": "A JupyterLab extension for Pachyderm.",
   "keywords": [
@@ -26,12 +26,12 @@
   },
   "scripts": {
     "build": "jlpm run build:lib",
-    "build:labextension": "cd pachyderm-jupyterlab-extension && rimraf labextension && mkdirp labextension && cd labextension && npm pack ../..",
+    "build:labextension": "cd pachyderm_extensions && rimraf labextension && mkdirp labextension && cd labextension && npm pack ../..",
     "build:lib": "tsc",
     "build:all": "jlpm run build:labextension",
     "clean": "jlpm run clean:lib",
     "clean:lib": "rimraf lib tsconfig.tsbuildinfo",
-    "clean:labextension": "rimraf pachyderm-jupyterlab-extension/labextension",
+    "clean:labextension": "rimraf pachyderm_extensions/labextension",
     "clean:all": "jlpm run clean:lib && jlpm run clean:labextension",
     "prepare": "jlpm run clean && jlpm run build",
     "watch": "tsc -w"
@@ -61,7 +61,7 @@
           "pip"
         ],
         "base": {
-          "name": "pachyderm-jupyterlab-extension"
+          "name": "pachyderm_extensions"
         }
       }
     },
