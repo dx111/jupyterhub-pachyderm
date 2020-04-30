@@ -2,11 +2,11 @@ include LICENSE
 include README.md
 
 include setupbase.py
-include jupyter-config/pachyderm-jupyterlab-extension.json
+include jupyter-config/pachyderm_extensions.json
 
 include package.json
 include ts*.json
-include pachyderm-jupyterlab-extension/labextension/*.tgz
+include pachyderm_extensions/labextension/*.tgz
 
 # Javascript files
 graft src

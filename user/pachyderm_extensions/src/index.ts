@@ -8,14 +8,14 @@ import { Terminal } from '@jupyterlab/terminal/lib/widget';
 import { terminalIcon } from '@jupyterlab/ui-components';
 
 /**
- * Initialization data for the pachyderm-jupyterlab-extension extension.
+ * Initialization data for pachyderm_extensions.
  */
 const extension: JupyterFrontEndPlugin<void> = {
-  id: 'pachyderm-jupyterlab-extension',
+  id: 'pachyderm_extensions',
   autoStart: true,
   requires: [ICommandPalette, IMainMenu],
   activate: (app: JupyterFrontEnd, palette: ICommandPalette, mainMenu: IMainMenu) => {
-    console.log('pachyderm-jupyterlab-extension is activated!');
+    console.log('pachyderm_extensions is activated!');
 
     const addAction = (command, label, executeFn) => {
       // Add the command

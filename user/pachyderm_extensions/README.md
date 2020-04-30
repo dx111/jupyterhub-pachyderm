@@ -1,11 +1,9 @@
-# pachyderm-jupyterlab-extension
+# JupyterLab Pachyderm Extensions
 
-![Github Actions Status](https://github.com/pachyderm/pachyderm/workflows/Build/badge.svg)
+JupyterLab extensions for Pachyderm.
 
-A JupyterLab extension for Pachyderm.
-
-This extension is composed of a Python package named `pachyderm-jupyterlab-extension`
-for the server extension and a NPM package named `jupyterlab_pachyderm-jupyterlab-extension`
+This extension is composed of a Python package named `pachyderm_extensions`
+for the server extension and a NPM package named `jupyterlab_pachyderm_extensions`
 for the frontend extension.
 
 ## Requirements
@@ -17,7 +15,7 @@ for the frontend extension.
 Note: You will need NodeJS to installed the extension.
 
 ```bash
-pip install pachyderm-jupyterlab-extension
+pip install .
 jupyter lab build
 ```
 
@@ -54,11 +52,11 @@ The `jlpm` command is JupyterLab's pinned version of
 
 ```bash
 # Clone the repo to your local environment
-# Move to pachyderm-jupyterlab-extension directory
+# Move to pachyderm_extensions directory
 # Install server extension
 pip install -e .
 # Register server extension
-jupyter serverextension enable --py pachyderm-jupyterlab-extension
+jupyter serverextension enable --py pachyderm_extensions
 # Install dependencies
 jlpm
 # Build Typescript source
@@ -84,6 +82,6 @@ jupyter lab --watch
 ### Uninstall
 
 ```bash
-pip uninstall pachyderm-jupyterlab-extension
-jupyter labextension uninstall jupyterlab_pachyderm-jupyterlab-extension
+pip uninstall pachyderm_extensions
+jupyter labextension uninstall jupyterlab_pachyderm_extensions
 ```
